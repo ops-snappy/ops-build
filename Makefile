@@ -216,3 +216,5 @@ distclean::
 	$(V)$(ECHO) "Distcleaning completed. You need to reconfigure to build again\n"
 
 include tools/Rules.make
+
+include standalone/Install.make

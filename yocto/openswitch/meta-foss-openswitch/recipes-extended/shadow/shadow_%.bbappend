@@ -3,5 +3,3 @@
 PR_append = "_openswitch"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
-
-EXTRA_OECONF_remove = "--without-audit"
