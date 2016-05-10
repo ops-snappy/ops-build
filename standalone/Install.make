@@ -28,7 +28,7 @@ ifeq ($(CONFIGURED_PLATFORM),alphanetworks-snx-60a0-486f)
 #        hardcoded for the SNX-60A0-486F.
 BCM_PLATFORM:=snx60a0-486f
 BCM_VENDOR:=alpha-$(BCM_PLATFORM)
-KERNEL_VERSION:=3.18.26-amd64
+KERNEL_VERSION:=3.18.32-amd64
 
 else ifeq ($(CONFIGURED_PLATFORM),alphanetworks-snh-60a0-320f)
 
@@ -46,6 +46,21 @@ CDP_BUILD=$(CDPDIR)/sdk-$(SDK_VERSION)-gpl-modules/build/linux/user/$(BCM_PLATFO
 CDP_LIBDIR=$(CDPDIR)/bin/$(BCM_VENDOR)
 
 relocated-usr-libs:=\
+libssl \
+
+relocated-libs:=\
+libaudit \
+libcrypto \
+
+relocate-bins:=\
+
+usr-libs:=\
+librbac \
+libsupportability \
+libswitchd_plugins \
+libovscommon \
+libovsdb \
+libsflow \
 libconfig-yaml \
 libffi \
 libjemalloc \
@@ -53,20 +68,7 @@ libofproto \
 libopenvswitch \
 libopsutils \
 libops-cli \
-libovscommon \
-libovsdb \
-libsflow \
-libssl \
-libsupportability \
-libswitchd_plugins \
 libyaml-0 \
-
-usr-libs:=\
-librbac \
-
-relocated-libs:=\
-libaudit \
-libcrypto \
 
 bin-daemons:=\
 ops-arpmgrd \
@@ -128,8 +130,9 @@ usr/share/openvswitch \
 srv/www \
 etc/openswitch/platform \
 etc/raddb \
-
-relocate-bins:=\
+usr/lib/openvswitch/plugins \
+usr/lib/debug \
+usr/src/debug \
 
 ssl-certs:=\
 server.crt \
@@ -175,6 +178,7 @@ define install-service-overrides
 endef
 
 define install-service
+	echo Installing service $(1) ; \
 	if [ -f $(ROOTFS)/lib/systemd/system/$(1).service ] ; then \
 		install $(ROOTFS)/lib/systemd/system/$(1).service $(DESTDIR)/lib/systemd/system ; \
 	fi
@@ -199,8 +203,10 @@ define install-file
 endef
 
 define install-dir
-	echo Installing dir $(1) ; \
-	install -d $(DESTDIR)/$(1) && cp -R $(ROOTFS)/$(1)/* $(DESTDIR)/$(1)
+	if [ -d $(ROOTFS)/$(1) ] ; then \
+		echo Installing dir $(1) ; \
+		install -d $(DESTDIR)/$(1) && cp -R $(ROOTFS)/$(1)/* $(DESTDIR)/$(1) ; \
+	fi
 endef
 
 define install-py-cmd
@@ -246,15 +252,19 @@ install-common:
 	for i in $(bin-daemons) ; do \
 		$(call install-daemon,$$i,$(ROOTFS)/usr/bin,$(DESTDIR)/usr/bin) ; \
 	done
+
 	for i in $(bin-cmds) ; do \
 		$(call install-file,$$i,$(ROOTFS)/usr/bin,$(DESTDIR)/usr/bin) ; \
 	done
+
 	for i in $(sbin-daemons) ; do \
 		$(call install-daemon,$$i,$(ROOTFS)/usr/sbin,$(DESTDIR)/usr/sbin) ; \
 	done
+
 	for i in $(other-svcs) ; do \
 		$(call install-service,$$i) ; \
 	done
+
 	for i in $(sbin-cmds) ; do \
 		$(call install-file,$$i,$(ROOTFS)/usr/sbin,$(DESTDIR)/usr/sbin) ; \
 	done
@@ -270,8 +280,13 @@ install-common:
 	for i in $(ssl-certs) ; do \
 		$(call install-file,$$i,$(ROOTFS)/etc/ssl/certs,$(DESTDIR)/etc/ssl/certs) ; \
 	done
+
 	for i in $(pam-files) ; do \
 		$(call install-file,$$i,$(ROOTFS)/etc/pam.d,$(DESTDIR)/etc/pam.d) ; \
+	done
+
+	for i in $(python-cmds) ; do \
+		$(call install-py-cmd,$$i) ; \
 	done
 
 	$(call install-file,image.manifest,$(ROOTFS)/etc/openswitch,$(DESTDIR)/etc/openswitch)
@@ -319,10 +334,6 @@ install-debian: install-common
 	cp -a $(ROOTFS)/usr/bin/py* $(DESTDIR)$(OPSBIN)
 	cp -a $(ROOTFS)/usr/lib/libpy* $(DESTDIR)$(OPSLIB)
 	cp -a $(ROOTFS)/usr/lib/python2.7 $(DESTDIR)$(OPSLIB)
-	cp -a $(ROOTFS)/usr/lib/python2.7/site-packages/* $(DESTDIR)$(PYPATH)
-	for i in $(python-cmds) ; do \
-		$(call install-py-cmd,$$i) ; \
-	done
 
 # Service overrides set up OpenSwitch-specific environment
 
@@ -352,9 +363,6 @@ install-snappy: install-common
 	cp -a $(ROOTFS)/usr/bin/py* $(DESTDIR)/usr/bin
 	cp -a $(ROOTFS)/usr/lib/libpy* $(DESTDIR)/usr/lib
 	cp -a $(ROOTFS)/usr/lib/python2.7 $(DESTDIR)/usr/lib
-	for i in $(python-cmds) ; do \
-		$(call install-py-cmd,$$i) ; \
-	done
 
 
 #

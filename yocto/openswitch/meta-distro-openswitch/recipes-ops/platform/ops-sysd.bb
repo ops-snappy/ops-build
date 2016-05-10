@@ -6,6 +6,7 @@ DEPENDS = "ops-utils ops-hw-config ops-ovsdb ops-cli ops-supportability"
 RDEPENDS_${PN} = "dmidecode"
 
 SRC_URI = "git://git.openswitch.net/openswitch/ops-sysd;protocol=https;branch=rel/dill \
+           file://ops-sysd-snappy.patch \
            file://ops-sysd.service \
 "
 

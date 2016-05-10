@@ -1,0 +1,93 @@
+diff --git a/src/sysd.c b/src/sysd.c
+index 9cffd03..19b88a9 100644
+--- a/src/sysd.c
++++ b/src/sysd.c
+@@ -58,6 +58,7 @@ int              num_subsystems = 0;
+ sysd_subsystem_t **subsystems = NULL;
+ 
+ char *g_hw_desc_dir = "/";
++char *g_hw_desc_link = "/";
+ 
+ daemon_info_t **daemons = NULL;
+ int num_daemons = 0;
+diff --git a/src/sysd_util.c b/src/sysd_util.c
+index d4d62bb..a385604 100644
+--- a/src/sysd_util.c
++++ b/src/sysd_util.c
+@@ -145,38 +153,47 @@ get_manuf_and_prodname(char *cmd_path, char **manufacturer, char **product_name)
+ static int
+ create_link_to_desc_files(char *manufacturer, char *product_name)
+ {
+-    char        hw_desc_dir[1024];
++    char        path[1024];
+     int         rc = 0;
+     struct stat sbuf;
+     extern char *g_hw_desc_dir;
++    extern char *g_hw_desc_link;
++    char        *install_rootdir;
++    char        *data_rootdir;
+ 
+-    snprintf(hw_desc_dir, sizeof(hw_desc_dir), "%s/%s/%s",
+-             HWDESC_FILES_PATH, manufacturer, product_name);
++    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
++        install_rootdir  = "";
++    if (!(data_rootdir = getenv("OPENSWITCH_DATA_PATH")))
++        data_rootdir  = "";
++    snprintf(path, sizeof(path), "%s%s/%s/%s",
++             install_rootdir, HWDESC_FILES_PATH, manufacturer, product_name);
+ 
+-    VLOG_INFO("Location to HW descrptor files: %s", hw_desc_dir);
++    VLOG_INFO("Location to HW descrptor files: %s", path);
+ 
+-    g_hw_desc_dir = strdup(hw_desc_dir);
++    g_hw_desc_dir = strdup(path);
+ 
+-    if (stat(hw_desc_dir, &sbuf) != 0) {
+-        VLOG_ERR("Unable to find hardware description files at %s", hw_desc_dir);
++    if (stat(g_hw_desc_dir, &sbuf) != 0) {
++        VLOG_ERR("Unable to find hardware description files at %s", g_hw_desc_dir);
+         return -1;
+     }
+ 
+     /* Remove old link if it exists */
+-    remove(HWDESC_FILE_LINK);
++    snprintf(path, sizeof(path), "%s%s", data_rootdir, HWDESC_FILE_LINK);
++    g_hw_desc_link = strdup(path);
++    remove(g_hw_desc_link);
+ 
+     /* mkdir for the new link */
+-    rc = mkdir(HWDESC_FILE_LINK_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
++    snprintf(path, sizeof(path), "%s%s", data_rootdir, HWDESC_FILE_LINK_PATH);
++    rc = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+     if (rc == -1 && errno != EEXIST) {
+-        VLOG_ERR("Failed to create %s, Error %s",
+-                 HWDESC_FILE_LINK_PATH, ovs_strerror(errno));
++        VLOG_ERR("Failed to create %s, Error %s", path, ovs_strerror(errno));
+         return -1;
+     }
+ 
+     /* Create link to these files */
+-    if (-1 == symlink(hw_desc_dir, HWDESC_FILE_LINK)) {
++    if (-1 == symlink(g_hw_desc_dir, g_hw_desc_link)) {
+         VLOG_ERR("Unable to create  soft link to %s -> %s. Error %s",
+-                 HWDESC_FILE_LINK, hw_desc_dir, ovs_strerror(errno));
++                 g_hw_desc_link, g_hw_desc_dir, ovs_strerror(errno));
+         return -1;
+     }
+ 
+@@ -437,7 +454,14 @@ sysd_set_num_hw_daemons()
+ int
+ sysd_read_manifest_file(void)
+ {
+-    manifest_info = json_from_file(IMAGE_MANIFEST_FILE_PATH);
++    char image_manifest_path[1024];
++    char *install_rootdir;
++
++    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
++        install_rootdir  = "";
++    snprintf(image_manifest_path, sizeof(image_manifest_path), "%s%s",
++             install_rootdir, IMAGE_MANIFEST_FILE_PATH);
++    manifest_info = json_from_file(image_manifest_path);
+ 
+     if (manifest_info == (struct json *) NULL) {
+         return -1;

@@ -1,0 +1,24 @@
+diff --git a/ops_aaautilspamcfg.py b/ops_aaautilspamcfg.py
+index 3f49320..e5c1189 100644
+--- a/ops_aaautilspamcfg.py
++++ b/ops_aaautilspamcfg.py
+@@ -46,15 +46,15 @@ vlog = ovs.vlog.Vlog("ops_aaautilspamcfg")
+ def_db = 'unix:/var/run/openvswitch/db.sock'
+ 
+ # Schema path
+-ovs_schema = '/usr/share/openvswitch/vswitch.ovsschema'
++ovs_schema = "%s/vswitch.ovsschema" % os.environ.get("OVS_PKGDATADIR", """/usr/share/openvswitch""")
+ 
+ # Program control
+ exiting = False
+ seqno = 0
+ 
+-PAM_ETC_CONFIG_DIR = "/etc/pam.d/"
+-RADIUS_CLIENT = "/etc/raddb/server"
+-SSHD_CONFIG = "/etc/ssh/sshd_config"
++PAM_ETC_CONFIG_DIR = "%s/pam.d/" % os.environ.get("OVS_SYSCONFDIR", """/etc""")
++RADIUS_CLIENT = "%s/raddb/server" % os.environ.get("OVS_SYSCONFDIR", """/etc""")
++SSHD_CONFIG = "%s/ssh/sshd_config" % os.environ.get("OVS_SYSCONFDIR", """/etc""")
+ 
+ dispatch_list = []
+ SYSTEM_TABLE = "System"

@@ -7,6 +7,7 @@ DEPENDS = "ops-ovsdb libyaml ops-cli"
 RDEPENDS_${PN} = "python-pyinotify python-xattr python-argparse python-json python-ops-ovsdb python-distribute python-pyyaml python-systemd"
 
 SRC_URI = "git://git.openswitch.net/openswitch/ops-supportability;protocol=https;branch=rel/dill \
+           file://ops-supportability-snappy.patch \
            file://ops-supportability.service \
 "
 
