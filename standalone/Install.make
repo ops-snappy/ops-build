@@ -369,8 +369,8 @@ install-snappy: install-common
 # Since opennsl generates kernel objects, it must be rebuilt for the target system.
 #
 
-# Expects CDPDIR, LINUX_HEADERS, and KERNEL_VERSION to be set by caller
-host-opennsl: $(CDPDIR) $(LINUX_HEADERS)
+# Expects CDPDIR, LINUX_SRC, LINUX_KBUILD to be set by caller
+host-opennsl: $(CDPDIR) $(LINUX_SRC) $(LINUX_KBUILD)
 	test -d $(CDP_SYSTEMS) || mkdir -p $(CDP_SYSTEMS)
 	cp yocto/openswitch/meta-platform-openswitch-$(CONFIGURED_PLATFORM)/recipes-asic/opennsl/opennsl-cdp/Makefile-modules $(CDP_SYSTEMS)/Makefile
-	cd $(CDP_SYSTEMS) && KERNEL_SRC=$(LINUX_HEADERS)/usr/src/linux-headers-$(KERNEL_VERSION) KBUILD_OUTPUT=$(LINUX_HEADERS)/usr/src/linux-headers-$(KERNEL_VERSION) SDK="$(CDPDIR)/sdk-$(SDK_VERSION)-gpl-modules" CROSS_COMPILE="" make
+	cd $(CDP_SYSTEMS) && KERNEL_SRC=$(LINUX_SRC) KBUILD_OUTPUT=$(LINUX_KBUILD) SDK="$(CDPDIR)/sdk-$(SDK_VERSION)-gpl-modules" CROSS_COMPILE="" make
