@@ -131,6 +131,8 @@ srv/www \
 etc/openswitch/platform \
 etc/raddb \
 usr/lib/openvswitch/plugins \
+
+debug-dirs:=\
 usr/lib/debug \
 usr/src/debug \
 
@@ -204,7 +206,7 @@ endef
 
 define install-dir
 	if [ -d $(ROOTFS)/$(1) ] ; then \
-		echo Installing dir $(1) ; \
+		echo Installing dir $(ROOTFS)/$(1) to $(DESTDIR)/$(1) ; \
 		install -d $(DESTDIR)/$(1) && cp -R $(ROOTFS)/$(1)/* $(DESTDIR)/$(1) ; \
 	fi
 endef
@@ -222,7 +224,7 @@ define install-yamls
 	install -d $(DESTDIR)/$(1) && cp -a $(ROOTFS)/$(1)/*.yaml $(DESTDIR)/$(1)
 endef
 
-.PHONY: install-common install-debian install-snappy host-opennsl
+.PHONY: install-common install-debian install-snappy gdbinit host-opennsl
 
 #
 # Common installation for all targets
@@ -270,6 +272,10 @@ install-common:
 	done
 
 	for i in $(dirs) ; do \
+		$(call install-dir,$$i) ; \
+	done
+
+	for i in $(debug-dirs) ; do \
 		$(call install-dir,$$i) ; \
 	done
 
@@ -364,6 +370,15 @@ install-snappy: install-common
 	cp -a $(ROOTFS)/usr/lib/libpy* $(DESTDIR)/usr/lib
 	cp -a $(ROOTFS)/usr/lib/python2.7 $(DESTDIR)/usr/lib
 
+#
+# Point to local debug information for remote debugging on target
+#
+gdbinit:
+	echo "directory $(ROOTFS)" > $(DESTDIR)/.gdbinit
+	echo "set debug-file-directory $(ROOTFS)/usr/lib/debug" >> $(DESTDIR)/.gdbinit
+	echo "set solib-search-path $(ROOTFS)/usr/lib:\\" >> $(DESTDIR)/.gdbinit
+	echo "$(ROOTFS)/usr/lib/openvswitch/plugins:\\" >> $(DESTDIR)/.gdbinit
+	echo "$(ROOTFS)/usr/lib/cli/plugins" >> $(DESTDIR)/.gdbinit
 
 #
 # Since opennsl generates kernel objects, it must be rebuilt for the target system.
