@@ -91,3 +91,33 @@ index d4d62bb..a385604 100644
  
      if (manifest_info == (struct json *) NULL) {
          return -1;
+diff --git a/src/sysd_ovsdb_if.c b/src/sysd_ovsdb_if.c
+index 41d61cc..35e8c20 100644
+--- a/src/sysd_ovsdb_if.c
++++ b/src/sysd_ovsdb_if.c
+@@ -446,6 +446,13 @@ sysd_add_package_info()
+     struct ovsrec_package_info *row  = NULL;
+     struct ovsdb_idl_txn       *txn  = NULL;
+     enum ovsdb_idl_txn_status  txn_status = TXN_ERROR;
++    char version_path[1024];
++    char *install_rootdir;
++
++    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
++        install_rootdir  = "";
++    snprintf(version_path, sizeof(version_path), "%s%s",
++             install_rootdir, VERSION_DETAIL_FILE_PATH);
+ 
+     /* Initialize parser */
+     if (!yaml_parser_initialize(&parser)) {
+@@ -454,9 +461,9 @@ sysd_add_package_info()
+     }
+ 
+     /* Open /var/lib/version_detail.yaml file */
+-    fh = fopen(VERSION_DETAIL_FILE_PATH, "r");
++    fh = fopen(version_path, "r");
+     if (NULL == fh) {
+-        VLOG_ERR("Failed to open file %s\n",VERSION_DETAIL_FILE_PATH);
++        VLOG_ERR("Failed to open file %s\n",version_path);
+         yaml_parser_delete(&parser);
+         return;
+     }

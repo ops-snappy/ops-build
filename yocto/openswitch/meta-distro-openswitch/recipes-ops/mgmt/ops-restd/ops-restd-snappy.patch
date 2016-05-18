@@ -28,3 +28,29 @@ index 6ea9100..dbf003c 100644
  
  settings["account_schema"] = os.path.join(os.path.dirname(custom.__file__),
                                            'schemas/Account.json')
+diff --git a/restd.py b/restd.py
+index 07eca9e..b102e3b 100644
+--- a/restd.py
++++ b/restd.py
+@@ -15,6 +15,7 @@ import ovs.unixctl
+ import ovs.unixctl.server
+ import ops_diagdump
+ import tornado.http1connection
++import os
+ 
+ # enable logging
+ from tornado.log import enable_pretty_logging
+@@ -76,9 +77,11 @@ def main():
+     app_log.debug("Creating OVSDB API Application!")
+     app = OvsdbApiApplication(settings)
+ 
++    certfile = "%s/etc/ssl/certs/server.crt" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
++    keyfile = "%s/etc/ssl/certs/server-private.key" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
+     HTTPS_server = tornado.httpserver.HTTPServer(app, ssl_options={
+-        "certfile": "/etc/ssl/certs/server.crt",
+-        "keyfile": "/etc/ssl/certs/server-private.key"})
++        "certfile": certfile,
++        "keyfile": keyfile})
+ 
+     HTTP_server = tornado.httpserver.HTTPServer(app)
+ 

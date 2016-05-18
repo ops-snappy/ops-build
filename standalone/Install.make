@@ -69,6 +69,8 @@ libopenvswitch \
 libopsutils \
 libops-cli \
 libyaml-0 \
+libyaml-cpp \
+libatomic \
 
 bin-daemons:=\
 ops-arpmgrd \
