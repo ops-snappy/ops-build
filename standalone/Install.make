@@ -130,6 +130,7 @@ usr/share/openvswitch \
 srv/www \
 etc/openswitch/platform \
 etc/raddb \
+usr/lib/cli/plugins \
 usr/lib/openvswitch/plugins \
 
 debug-dirs:=\
