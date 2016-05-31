@@ -1,5 +1,5 @@
 diff --git a/opsrest/settings.py b/opsrest/settings.py
-index 6ea9100..dbf003c 100644
+index 447dcbc..f38b41d 100644
 --- a/opsrest/settings.py
 +++ b/opsrest/settings.py
 @@ -12,7 +12,7 @@
@@ -11,7 +11,7 @@ index 6ea9100..dbf003c 100644
  import custom
  
  from tornado.options import define
-@@ -28,12 +28,12 @@ settings['logging'] = 'info'
+@@ -27,13 +27,13 @@ settings['logging'] = 'info'
  settings["static_path"] = os.path.join(os.path.dirname(__file__), "static")
  settings["template_path"] = os.path.join(os.path.dirname(__file__),
                                           "templates")
@@ -28,19 +28,19 @@ index 6ea9100..dbf003c 100644
  
  settings["account_schema"] = os.path.join(os.path.dirname(custom.__file__),
                                            'schemas/Account.json')
+-settings["passwd_srv_yaml"] = '/etc/ops-passwd-srv/ops-passwd-srv.yaml'
++settings["passwd_srv_yaml"] = "%s/etc/ops-passwd-srv/ops-passwd-srv.yaml" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 diff --git a/restd.py b/restd.py
-index 07eca9e..b102e3b 100644
+index e9da74b..479fb5e 100644
 --- a/restd.py
 +++ b/restd.py
-@@ -15,6 +15,7 @@ import ovs.unixctl
- import ovs.unixctl.server
- import ops_diagdump
- import tornado.http1connection
+@@ -1,4 +1,5 @@
+ #!/usr/bin/env python
 +import os
- 
- # enable logging
- from tornado.log import enable_pretty_logging
-@@ -76,9 +77,11 @@ def main():
+ import tornado.httpserver
+ import tornado.ioloop
+ import tornado.options
+@@ -83,9 +84,11 @@ def main():
      app_log.debug("Creating OVSDB API Application!")
      app = OvsdbApiApplication(settings)
  

@@ -14,7 +14,11 @@ PYPATH:=$(OPSLIB)/python2.7/site-packages
 
 # The OpenSwitch native build installation location
 PLATFORM_PATH:=$(subst -,_,$(CONFIGURED_PLATFORM))
+ifeq ($(CONFIGURED_PLATFORM),appliance)
+ROOTFS:=$(BUILD_ROOT)/build/tmp/work/$(PLATFORM_PATH)-$(DISTRO)-linux/$(DISTRO)-appliance-image/1.0-r0/rootfs
+else
 ROOTFS:=$(BUILD_ROOT)/build/tmp/work/$(PLATFORM_PATH)-$(DISTRO)-linux/$(DISTRO)-disk-image/1.0-r0/rootfs
+endif
 
 # Local rebuild of host opennsl
 HOSTBUILD:=$(BUILD_ROOT)/build/tmp/work/host-opennsl
@@ -24,13 +28,17 @@ DEBDIR:=standalone/debian
 
 ifeq ($(CONFIGURED_PLATFORM),alphanetworks-snx-60a0-486f)
 
-# TODO - The following variables need to be dynamically defined as they are currently
-#        hardcoded for the SNX-60A0-486F.
 BCM_PLATFORM:=snx60a0-486f
 BCM_VENDOR:=alpha-$(BCM_PLATFORM)
 KERNEL_VERSION:=3.18.32-amd64
 
 else ifeq ($(CONFIGURED_PLATFORM),alphanetworks-snh-60a0-320f)
+
+BCM_PLATFORM:=snh60a0-320f
+BCM_VENDOR:=alpha-$(BCM_PLATFORM)
+KERNEL_VERSION:=3.18.32-amd64
+
+else ifeq ($(CONFIGURED_PLATFORM),appliance)
 
 else ifeq ($(CONFIGURED_PLATFORM),as6712)
 
@@ -71,6 +79,9 @@ libops-cli \
 libyaml-0 \
 libyaml-cpp \
 libatomic \
+libnetsnmp \
+libospf  \
+libzebra \
 
 bin-daemons:=\
 ops-arpmgrd \
@@ -90,6 +101,7 @@ ops-powerd \
 bufmond \
 vtysh \
 ops-classifierd \
+ops-passwd-srv \
 
 sbin-daemons:=\
 ops-bgpd \
@@ -99,12 +111,47 @@ ops-ospfd \
 ops-zebra \
 ovsdb-server \
 
+ifeq ($(CONFIGURED_PLATFORM),appliance)
+opt-sbin-daemons:=\
+openvswitch-sim \
+ovsdb-server-sim \
+
+ovssbin-daemons:=\
+ovs-vswitchd-sim \
+ovsdb-server \
+
+openvswitch-bin-cmds:=\
+ovs-appctl \
+ovs-benchmark \
+ovs-dpctl \
+ovs-dpctl-top \
+ovs-l3ping \
+ovs-ofctl \
+ovs-parse-backtrace \
+ovs-pcap \
+ovs-pki \
+ovs-tcpundump \
+ovs-test \
+ovs-vlan-test \
+ovs-vsctl \
+ovsdb-client \
+ovsdb-tool \
+vtep-ctl \
+
+openvswitch-share:=\
+vswitch.ovsschema \
+vtep.ovsschema \
+
+endif
+
 bin-cmds:=\
 ops-broadview \
 ops_mgmtintfcfg \
 ovsdb-client \
 ovsdb-tool \
 ovs-appctl \
+nwdiag \
+cfgdbutil \
 
 sbin-cmds:=\
 ops-switchd
@@ -134,6 +181,8 @@ etc/openswitch/platform \
 etc/raddb \
 usr/lib/cli/plugins \
 usr/lib/openvswitch/plugins \
+etc/ops-passwd-srv \
+usr/share/opsplugins \
 
 debug-dirs:=\
 usr/lib/debug \
@@ -162,25 +211,6 @@ common-account-access \
 common-auth-access \
 common-session-access \
 common-password-access \
-
-define install-service-overrides
-	for svc in $(DESTDIR)/lib/systemd/system/*.service ; do \
-		svcname=$${svc##*/} ; \
-		svcname=$${svcname%.service} ; \
-		install -d $(DESTDIR)/etc/systemd/system/$$svcname.service.d ; \
-		case $$svcname in \
-		cfgd|switchd|ops-init) \
-			install -m 644 $(DEBDIR)/systemd_service_overrides/$$svcname.conf $(DESTDIR)/etc/systemd/system/$$svcname.service.d ; \
-			;; \
-		aaautils|ops-ntpd|restd) \
-			install -m 644 $(DEBDIR)/systemd_service_overrides/pypath.conf $(DESTDIR)/etc/systemd/system/$$svcname.service.d ; \
-			;; \
-		*) \
-			install -m 644 $(DEBDIR)/systemd_service_overrides/openswitch.conf $(DESTDIR)/etc/systemd/system/$$svcname.service.d ; \
-			;; \
-		esac ; \
-	done
-endef
 
 define install-service
 	echo Installing service $(1) ; \
@@ -249,6 +279,12 @@ install-common:
 	install -d $(DESTDIR)/etc/systemd/system
 	install -d $(DESTDIR)/etc/ssl/certs
 	install -d $(DESTDIR)/etc/pam.d
+ifeq ($(CONFIGURED_PLATFORM),appliance)
+	install -d $(DESTDIR)/opt/openvswitch/bin
+	install -d $(DESTDIR)/opt/openvswitch/sbin
+	install -d $(DESTDIR)/opt/openvswitch/share/openvswitch
+	install -d $(DESTDIR)/var/run/openvswitch-sim
+endif
 
 	for i in $(usr-libs) ; do \
 		$(call install-lib,$$i,$(ROOTFS)/usr/lib,$(DESTDIR)/usr/lib) ; \
@@ -278,10 +314,6 @@ install-common:
 		$(call install-dir,$$i) ; \
 	done
 
-	for i in $(debug-dirs) ; do \
-		$(call install-dir,$$i) ; \
-	done
-
 	for i in $(yamls) ; do \
 		$(call install-yamls,$$i) ; \
 	done
@@ -298,8 +330,34 @@ install-common:
 		$(call install-py-cmd,$$i) ; \
 	done
 
+ifeq ($(CONFIGURED_PLATFORM),appliance)
+	for i in $(opt-sbin-daemons) ; do \
+		$(call install-daemon,$$i,$(ROOTFS)/opt/openvswitch/sbin,$(DESTDIR)/opt/openvswitch/sbin) ; \
+	done
+
+	for i in $(ovssbin-daemons) ; do \
+		$(call install-daemon,$$i,$(ROOTFS)/opt/openvswitch/sbin,$(DESTDIR)/opt/openvswitch/sbin) ; \
+	done
+
+	for i in $(openvswitch-bin-cmds) ; do \
+		$(call install-file,$$i,$(ROOTFS)/opt/openvswitch/bin,$(DESTDIR)/opt/openvswitch/bin) ; \
+	done
+
+	for i in $(openvswitch-share) ; do \
+		$(call install-file,$$i,$(ROOTFS)/opt/openvswitch/share/openvswitch,$(DESTDIR)/opt/openvswitch/share/openvswitch) ; \
+	done
+endif
+
 	$(call install-file,image.manifest,$(ROOTFS)/etc/openswitch,$(DESTDIR)/etc/openswitch)
 	$(call install-file,useradd,$(ROOTFS)/etc/sudoers.d,$(DESTDIR)/etc/sudoers.d)
+
+	for i in $(debug-dirs) ; do \
+		$(call install-dir,$$i) ; \
+	done
+	if [ -d $(DESTDIR)/usr/src/debug ] ; then \
+		find $(DESTDIR)/usr/src/debug -type d -exec chmod 755 {} \; ; \
+		find $(DESTDIR)/usr/src/debug -type f -exec chmod 644 {} \; ; \
+	fi
 
 # switchd/opennsl for host
 
@@ -308,7 +366,7 @@ ifdef CDPDIR
 	install -m 0755 $(CDP_LIBDIR)/netserve $(DESTDIR)/usr/bin
 	install $(CDP_BUILD)/*.ko $(DESTDIR)/lib/modules/$(KERNEL_VERSION)/extra/opennsl
 	install $(CDP_LIBDIR)/libopennsl.so.1 $(DESTDIR)$(OPSLIB)
-	cd $(DESTDIR)$(OPSLIB) && ln -s libopennsl.so.1 libopennsl.so
+	cd $(DESTDIR)$(OPSLIB) && ln -sf libopennsl.so.1 libopennsl.so
 	install -m 0755 $(CDPDIR)/openswitch/opennsl.pc $(DESTDIR)$(OPSLIB)/pkgconfig
 	sed -i -- "s/-DCDP_EXCLUDE/-UCDP_EXCLUDE/" $(DESTDIR)$(OPSLIB)/pkgconfig/opennsl.pc
 	install -d $(DESTDIR)/etc/modules-load.d
@@ -343,10 +401,6 @@ install-debian: install-common
 	cp -a $(ROOTFS)/usr/bin/py* $(DESTDIR)$(OPSBIN)
 	cp -a $(ROOTFS)/usr/lib/libpy* $(DESTDIR)$(OPSLIB)
 	cp -a $(ROOTFS)/usr/lib/python2.7 $(DESTDIR)$(OPSLIB)
-
-# Service overrides set up OpenSwitch-specific environment
-
-	$(call install-service-overrides)
 
 # Fix up permissions
 
