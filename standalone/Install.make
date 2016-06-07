@@ -113,6 +113,7 @@ ovsdb-server \
 
 ifeq ($(CONFIGURED_PLATFORM),appliance)
 opt-sbin-daemons:=\
+vboxguest \
 openvswitch-sim \
 ovsdb-server-sim \
 
