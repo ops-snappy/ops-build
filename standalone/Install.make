@@ -331,6 +331,9 @@ endif
 		$(call install-py-cmd,$$i) ; \
 	done
 
+	install -d $(DESTDIR)/usr/lib/openvswitch/plugins
+	install $(ROOTFS)/usr/lib/openvswitch/plugins/* $(DESTDIR)/usr/lib/openvswitch/plugins
+
 ifeq ($(CONFIGURED_PLATFORM),appliance)
 	for i in $(opt-sbin-daemons) ; do \
 		$(call install-daemon,$$i,$(ROOTFS)/opt/openvswitch/sbin,$(DESTDIR)/opt/openvswitch/sbin) ; \
@@ -362,12 +365,16 @@ endif
 
 # switchd/opennsl for host
 
-ifdef CDPDIR
-	install -d $(DESTDIR)/lib/modules/$(KERNEL_VERSION)/extra/opennsl
+install-debian-opennsl: host-opennsl
+
+	install -d $(DESTDIR)/usr/bin
 	install -m 0755 $(CDP_LIBDIR)/netserve $(DESTDIR)/usr/bin
+	install -d $(DESTDIR)/lib/modules/$(KERNEL_VERSION)/extra/opennsl
 	install $(CDP_BUILD)/*.ko $(DESTDIR)/lib/modules/$(KERNEL_VERSION)/extra/opennsl
+	install -d $(DESTDIR)$(OPSLIB)
 	install $(CDP_LIBDIR)/libopennsl.so.1 $(DESTDIR)$(OPSLIB)
 	cd $(DESTDIR)$(OPSLIB) && ln -sf libopennsl.so.1 libopennsl.so
+	install -d $(DESTDIR)$(OPSLIB)/pkgconfig
 	install -m 0755 $(CDPDIR)/openswitch/opennsl.pc $(DESTDIR)$(OPSLIB)/pkgconfig
 	sed -i -- "s/-DCDP_EXCLUDE/-UCDP_EXCLUDE/" $(DESTDIR)$(OPSLIB)/pkgconfig/opennsl.pc
 	install -d $(DESTDIR)/etc/modules-load.d
@@ -377,9 +384,6 @@ ifdef CDPDIR
 	install -d $(DESTDIR)/etc/udev/rules.d
 	install -m 0644 $(CDPDIR)/openswitch/bcm.rules $(DESTDIR)/etc/udev/rules.d/70-bcm.rules
 	install -m 0755 $(CDPDIR)/openswitch/bcm_devices.sh $(DESTDIR)/etc/udev/rules.d
-	install -d $(DESTDIR)/usr/lib/openvswitch/plugins
-	install $(ROOTFS)/usr/lib/openvswitch/plugins/* $(DESTDIR)/usr/lib/openvswitch/plugins
-endif
 
 #
 # Debian needs to relocate some objects that may conflict with existing debian installation
