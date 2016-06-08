@@ -1,0 +1,4 @@
+--prune-empty-dirs
+--delete
+--delete-excluded
+--exclude=/build/
