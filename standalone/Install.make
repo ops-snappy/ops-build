@@ -54,11 +54,12 @@ CDP_BUILD=$(CDPDIR)/sdk-$(SDK_VERSION)-gpl-modules/build/linux/user/$(BCM_PLATFO
 CDP_LIBDIR=$(CDPDIR)/bin/$(BCM_VENDOR)
 
 relocated-usr-libs:=\
+libcrypto \
 libssl \
+libnetsnmp \
 
 relocated-libs:=\
 libaudit \
-libcrypto \
 
 relocate-bins:=\
 
@@ -76,17 +77,16 @@ libofproto \
 libopenvswitch \
 libopsutils \
 libops-cli \
+libops_snmptrap \
 libyaml-0 \
 libyaml-cpp \
 libatomic \
-libnetsnmp \
 libospf  \
 libzebra \
 
 bin-daemons:=\
 ops-arpmgrd \
 ops-fand \
-ops-hw-vtep \
 ops-intfd \
 ops-lacpd \
 ops-ledd \
@@ -98,10 +98,11 @@ ops-tempd \
 ops-udpfwd \
 ops-vland \
 ops-powerd \
-bufmond \
 vtysh \
 ops-classifierd \
 ops-passwd-srv \
+
+
 
 sbin-daemons:=\
 ops-bgpd \
@@ -110,40 +111,6 @@ ops-lldpd \
 ops-ospfd \
 ops-zebra \
 ovsdb-server \
-
-ifeq ($(CONFIGURED_PLATFORM),appliance)
-opt-sbin-daemons:=\
-vboxguest \
-openvswitch-sim \
-ovsdb-server-sim \
-
-ovssbin-daemons:=\
-ovs-vswitchd-sim \
-ovsdb-server \
-
-openvswitch-bin-cmds:=\
-ovs-appctl \
-ovs-benchmark \
-ovs-dpctl \
-ovs-dpctl-top \
-ovs-l3ping \
-ovs-ofctl \
-ovs-parse-backtrace \
-ovs-pcap \
-ovs-pki \
-ovs-tcpundump \
-ovs-test \
-ovs-vlan-test \
-ovs-vsctl \
-ovsdb-client \
-ovsdb-tool \
-vtep-ctl \
-
-openvswitch-share:=\
-vswitch.ovsschema \
-vtep.ovsschema \
-
-endif
 
 bin-cmds:=\
 ops-broadview \
@@ -212,6 +179,46 @@ common-account-access \
 common-auth-access \
 common-session-access \
 common-password-access \
+
+ifeq ($(CONFIGURED_PLATFORM),appliance)
+
+ovssbin-daemons:=\
+ovs-vswitchd-sim \
+ovsdb-server \
+
+openvswitch-bin-cmds:=\
+ovs-appctl \
+ovs-benchmark \
+ovs-dpctl \
+ovs-dpctl-top \
+ovs-l3ping \
+ovs-ofctl \
+ovs-parse-backtrace \
+ovs-pcap \
+ovs-pki \
+ovs-tcpundump \
+ovs-test \
+ovs-vlan-test \
+ovs-vsctl \
+ovsdb-client \
+ovsdb-tool \
+vtep-ctl \
+
+openvswitch-share:=\
+vswitch.ovsschema \
+vtep.ovsschema \
+
+other-svcs+=\
+openvswitch-sim \
+ovsdb-server-sim \
+
+else
+
+bin-daemons+=\
+ops-hw-vtep \
+bufmond \
+
+endif
 
 define install-service
 	echo Installing service $(1) ; \
@@ -335,10 +342,6 @@ endif
 	install $(ROOTFS)/usr/lib/openvswitch/plugins/* $(DESTDIR)/usr/lib/openvswitch/plugins
 
 ifeq ($(CONFIGURED_PLATFORM),appliance)
-	for i in $(opt-sbin-daemons) ; do \
-		$(call install-daemon,$$i,$(ROOTFS)/opt/openvswitch/sbin,$(DESTDIR)/opt/openvswitch/sbin) ; \
-	done
-
 	for i in $(ovssbin-daemons) ; do \
 		$(call install-daemon,$$i,$(ROOTFS)/opt/openvswitch/sbin,$(DESTDIR)/opt/openvswitch/sbin) ; \
 	done

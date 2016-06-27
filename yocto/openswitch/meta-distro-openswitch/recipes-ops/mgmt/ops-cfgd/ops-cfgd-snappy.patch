@@ -1,8 +1,8 @@
 diff --git a/ops_cfgd.py b/ops_cfgd.py
-index e61d100..2e7aa2c 100644
+index 64b0a79..240f6a8 100644
 --- a/ops_cfgd.py
 +++ b/ops_cfgd.py
-@@ -43,8 +43,8 @@ def_db = 'unix:/var/run/openvswitch/db.sock'
+@@ -44,8 +44,8 @@ def_db = 'unix:/var/run/openvswitch/db.sock'
  # Configuration file definitions
  saved_config = None
  # OPS_TODO: Need to pull these three from the build env

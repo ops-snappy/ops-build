@@ -1,5 +1,5 @@
 diff --git a/ops_aaautilspamcfg.py b/ops_aaautilspamcfg.py
-index 3f49320..e5c1189 100644
+index 3f49320..4378aa1 100644
 --- a/ops_aaautilspamcfg.py
 +++ b/ops_aaautilspamcfg.py
 @@ -46,15 +46,15 @@ vlog = ovs.vlog.Vlog("ops_aaautilspamcfg")
@@ -22,3 +22,34 @@ index 3f49320..e5c1189 100644
  
  dispatch_list = []
  SYSTEM_TABLE = "System"
+@@ -90,6 +90,14 @@ URL = "url"
+ RADIUS_PAP = "pap"
+ RADIUS_CHAP = "chap"
+ 
++#----------------- get_distro ---------------
++def get_distro():
++    """
++    Name of your Linux distro (in lowercase).
++    """
++    with open("/etc/issue") as f:
++        return f.read().lower().split()[0]
++
+ #---------------- unixctl_exit --------------------------
+ def unixctl_exit(conn, unused_argv, unused_aux):
+     global exiting
+@@ -363,8 +371,13 @@ def modify_common_auth_session_file(fallback_value, radius_value,
+ 
+     fallback_local_auth[1] = "session\trequired\tpam_unix.so\n"
+ 
+-    filename[0] = PAM_ETC_CONFIG_DIR + "common-auth-access"
+-    filename[1] = PAM_ETC_CONFIG_DIR + "common-session-access"
++    if (get_distro() == "debian"):
++        filename[0] = PAM_ETC_CONFIG_DIR + "common-auth"
++        filename[1] = PAM_ETC_CONFIG_DIR + "common-session"
++    else:
++        filename[0] = PAM_ETC_CONFIG_DIR + "common-auth-access"
++        filename[1] = PAM_ETC_CONFIG_DIR + "common-session-access"
++
+     for count in range(0, 2):
+         with open(filename[count], "r") as f:
+             contents = f.readlines()

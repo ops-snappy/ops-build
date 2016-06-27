@@ -1,8 +1,8 @@
 diff --git a/src/sysd.c b/src/sysd.c
-index 9cffd03..19b88a9 100644
+index 112b12a..e9f9f2b 100644
 --- a/src/sysd.c
 +++ b/src/sysd.c
-@@ -58,6 +58,7 @@ int              num_subsystems = 0;
+@@ -62,6 +62,7 @@ int              num_subsystems = 0;
  sysd_subsystem_t **subsystems = NULL;
  
  char *g_hw_desc_dir = "/";
@@ -10,11 +10,58 @@ index 9cffd03..19b88a9 100644
  
  daemon_info_t **daemons = NULL;
  int num_daemons = 0;
+ /** @} end of group sysd */
+diff --git a/src/sysd_ovsdb_if.c b/src/sysd_ovsdb_if.c
+index b2e85ac..43234dc 100644
+--- a/src/sysd_ovsdb_if.c
++++ b/src/sysd_ovsdb_if.c
+@@ -58,6 +58,7 @@ VLOG_DEFINE_THIS_MODULE(ovsdb_if);
+  * @{ */
+ #define PKG_INFO_ENTRIES_PER_COMMIT 2000
+ #define REM_BUF_LEN (buflen - 1 - strlen(buf))
++#define SYSD_POLL_INTERVAL 100
+ 
+ enum {
+     VALUE,
+@@ -451,6 +452,13 @@ sysd_add_package_info()
+     struct ovsrec_package_info *row  = NULL;
+     struct ovsdb_idl_txn       *txn  = NULL;
+     enum ovsdb_idl_txn_status  txn_status = TXN_ERROR;
++    char version_path[1024];
++    char *install_rootdir;
++
++    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
++        install_rootdir  = "";
++    snprintf(version_path, sizeof(version_path), "%s%s",
++             install_rootdir, VERSION_DETAIL_FILE_PATH);
+ 
+     /* Initialize parser */
+     if (!yaml_parser_initialize(&parser)) {
+@@ -459,9 +467,9 @@ sysd_add_package_info()
+     }
+ 
+     /* Open /var/lib/version_detail.yaml file */
+-    fh = fopen(VERSION_DETAIL_FILE_PATH, "r");
++    fh = fopen(version_path, "r");
+     if (NULL == fh) {
+-        VLOG_ERR("Failed to open file %s\n",VERSION_DETAIL_FILE_PATH);
++        VLOG_ERR("Failed to open file %s\n",version_path);
+         yaml_parser_delete(&parser);
+         return;
+     }
+@@ -984,6 +992,6 @@ void
+ sysd_wait(void)
+ {
+     ovsdb_idl_wait(idl);
+-
++    poll_timer_wait(SYSD_POLL_INTERVAL);
+ } /* sysd_wait */
+ /** @} end of group sysd */
 diff --git a/src/sysd_util.c b/src/sysd_util.c
-index d4d62bb..a385604 100644
+index 70651c8..9ebbd70 100644
 --- a/src/sysd_util.c
 +++ b/src/sysd_util.c
-@@ -145,38 +153,47 @@ get_manuf_and_prodname(char *cmd_path, char **manufacturer, char **product_name)
+@@ -147,38 +155,47 @@ get_manuf_and_prodname(char *cmd_path, char **manufacturer, char **product_name)
  static int
  create_link_to_desc_files(char *manufacturer, char *product_name)
  {
@@ -75,7 +122,7 @@ index d4d62bb..a385604 100644
          return -1;
      }
  
-@@ -437,7 +454,14 @@ sysd_set_num_hw_daemons()
+@@ -451,7 +468,14 @@ sysd_set_num_hw_daemons()
  int
  sysd_read_manifest_file(void)
  {
@@ -91,33 +138,3 @@ index d4d62bb..a385604 100644
  
      if (manifest_info == (struct json *) NULL) {
          return -1;
-diff --git a/src/sysd_ovsdb_if.c b/src/sysd_ovsdb_if.c
-index 41d61cc..35e8c20 100644
---- a/src/sysd_ovsdb_if.c
-+++ b/src/sysd_ovsdb_if.c
-@@ -446,6 +446,13 @@ sysd_add_package_info()
-     struct ovsrec_package_info *row  = NULL;
-     struct ovsdb_idl_txn       *txn  = NULL;
-     enum ovsdb_idl_txn_status  txn_status = TXN_ERROR;
-+    char version_path[1024];
-+    char *install_rootdir;
-+
-+    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
-+        install_rootdir  = "";
-+    snprintf(version_path, sizeof(version_path), "%s%s",
-+             install_rootdir, VERSION_DETAIL_FILE_PATH);
- 
-     /* Initialize parser */
-     if (!yaml_parser_initialize(&parser)) {
-@@ -454,9 +461,9 @@ sysd_add_package_info()
-     }
- 
-     /* Open /var/lib/version_detail.yaml file */
--    fh = fopen(VERSION_DETAIL_FILE_PATH, "r");
-+    fh = fopen(version_path, "r");
-     if (NULL == fh) {
--        VLOG_ERR("Failed to open file %s\n",VERSION_DETAIL_FILE_PATH);
-+        VLOG_ERR("Failed to open file %s\n",version_path);
-         yaml_parser_delete(&parser);
-         return;
-     }

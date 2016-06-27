@@ -1,5 +1,5 @@
 diff --git a/opsrest/settings.py b/opsrest/settings.py
-index 447dcbc..f38b41d 100644
+index 9687426..ca29e6e 100755
 --- a/opsrest/settings.py
 +++ b/opsrest/settings.py
 @@ -12,7 +12,7 @@
@@ -11,7 +11,7 @@ index 447dcbc..f38b41d 100644
  import custom
  
  from tornado.options import define
-@@ -27,13 +27,13 @@ settings['logging'] = 'info'
+@@ -27,12 +27,12 @@ settings['logging'] = 'info'
  settings["static_path"] = os.path.join(os.path.dirname(__file__), "static")
  settings["template_path"] = os.path.join(os.path.dirname(__file__),
                                           "templates")
@@ -22,7 +22,6 @@ index 447dcbc..f38b41d 100644
 +settings['ovs_schema'] = "%s/usr/share/openvswitch/vswitch.ovsschema" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 +settings['ext_schema'] = "%s/usr/share/openvswitch/vswitch.extschema" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
  settings['auth_enabled'] = True
- settings['cookie_secret'] = '61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo='
 -settings['cfg_db_schema'] = '/usr/share/openvswitch/configdb.ovsschema'
 +settings['cfg_db_schema'] = "%s/usr/share/openvswitch/configdb.ovsschema" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
  
@@ -31,26 +30,20 @@ index 447dcbc..f38b41d 100644
 -settings["passwd_srv_yaml"] = '/etc/ops-passwd-srv/ops-passwd-srv.yaml'
 +settings["passwd_srv_yaml"] = "%s/etc/ops-passwd-srv/ops-passwd-srv.yaml" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 diff --git a/restd.py b/restd.py
-index e9da74b..479fb5e 100644
+index 961a79d..13de550 100644
 --- a/restd.py
 +++ b/restd.py
-@@ -1,4 +1,5 @@
- #!/usr/bin/env python
-+import os
- import tornado.httpserver
- import tornado.ioloop
- import tornado.options
-@@ -83,9 +84,11 @@ def main():
-     app_log.debug("Creating OVSDB API Application!")
-     app = OvsdbApiApplication(settings)
+@@ -31,10 +31,9 @@ from tornado.log import enable_pretty_logging
+ options.logging = settings['logging']
+ enable_pretty_logging()
  
-+    certfile = "%s/etc/ssl/certs/server.crt" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
-+    keyfile = "%s/etc/ssl/certs/server-private.key" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
-     HTTPS_server = tornado.httpserver.HTTPServer(app, ssl_options={
--        "certfile": "/etc/ssl/certs/server.crt",
--        "keyfile": "/etc/ssl/certs/server-private.key"})
-+        "certfile": certfile,
-+        "keyfile": keyfile})
+-SSL_PRIV_DIR = "/etc/ssl/private"
+-SSL_PRIV_KEY_FILE = "/etc/ssl/private/server-private.key"
+-SSL_CRT_FILE = "/etc/ssl/certs/server.crt"
+-
++SSL_PRIV_DIR = "%s/etc/ssl/private" % os.environ.get("OPENSWITCH_DATA_PATH", "")
++SSL_PRIV_KEY_FILE = "%s/etc/ssl/certs/server-private.key" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
++SSL_CRT_FILE = "%s/etc/ssl/certs/server.crt" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
  
-     HTTP_server = tornado.httpserver.HTTPServer(app)
- 
+ def create_ssl_pki():
+     if not os.path.exists(SSL_PRIV_DIR):

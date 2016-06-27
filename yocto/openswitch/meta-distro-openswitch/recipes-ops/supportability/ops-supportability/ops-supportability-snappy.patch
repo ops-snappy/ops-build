@@ -1,5 +1,5 @@
 diff --git a/src/eventlog/eventlog.c b/src/eventlog/eventlog.c
-index 5f8a9dc..aebff5e 100644
+index 038208e..299d54c 100644
 --- a/src/eventlog/eventlog.c
 +++ b/src/eventlog/eventlog.c
 @@ -39,7 +39,7 @@ VLOG_DEFINE_THIS_MODULE(eventlog);
