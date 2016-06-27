@@ -2,13 +2,13 @@ SUMMARY = "OpenSwitch VLAN Daemon"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
-DEPENDS = "ops-ovsdb ops-cli"
+DEPENDS = "ops-ovsdb ops-cli ops-supportability"
 
 SRC_URI = "git://git.openswitch.net/openswitch/ops-vland;protocol=http;branch=rel/dill \
            file://ops-vland.service \
 "
 
-SRCREV = "599c99236a1390c07d0ed738830734ca04a09cc9"
+SRCREV = "56b45d2b3170ca36feb05f69f1d44b1a57de276c"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.

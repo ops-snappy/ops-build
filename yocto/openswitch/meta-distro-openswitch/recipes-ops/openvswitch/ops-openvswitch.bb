@@ -6,15 +6,25 @@ DEPENDS = "openssl python perl systemd libtool libyaml jemalloc ops"
 
 SRC_URI = "git://git.openswitch.net/openswitch/ops-openvswitch;protocol=http;branch=rel/dill \
    file://ovsdb-server.service \
-   file://partial-map-updates.patch \
-   file://on-demand-fetching.patch \
-   file://compound-indexes.patch \
-   file://idl_tracking_python.patch \
-   file://smap-shash-add-numeric-and-flexible-sort.patch \
-   file://json.py.patch \
+   file://0001-Add-Partial-Map-Updates-functionality.patch \
+   file://0002-on-demand-fetching.patch \
+   file://0003-compound-indexes.patch \
+   file://0004-idl_tracking_python.patch \
+   file://0005-smap-shash-add-numeric-and-flexible-sort.patch \
+   file://0006-json.py.patch \
+   file://0007-get_idl_txn.patch \
+   file://0008-ovsdb_json_error_msgs.patch \
+   file://0009-bond_status_speed.patch \
+   file://0010-schema-to-idl-populates-value-if-it-is-present.patch \
+   file://0011-chg-dev-updated-ovs-vsctl-commands-for-L2-mac.patch \
+   file://0012-Implementation-of-weak_gc-reference-type.patch \
+   file://0013-improve-mirror-PD-errors.patch \
+   file://0014-Adding-support-for-SFP-ER-transceiver-modules.patch \
+   file://0015-sFlow-CLI-restriction-changes.patch \
+   file://0016-Adding-assert-strdup-vrf-name.patch \
 "
 
-SRCREV = "168822522aab9f13e68e8e5247ce2d7a928832f8"
+SRCREV = "ae74c6e7d4086bdc9942b33f2410ef87403e336e"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.
@@ -32,7 +42,7 @@ RDEPENDS_${PN} = "openssl procps util-linux-uuidgen util-linux-libuuid coreutils
 
 RDEPENDS_${PN}_remove := "${@bb.utils.contains("IMAGE_FEATURES", "ops-p4", "openvswitch-sim-switch", "",d)}"
 
-RDEPENDS_ops-ovsdb = "ops"
+RDEPENDS_ops-ovsdb = "ops ops-reboot"
 
 RDEPENDS_python-ops-ovsdb = "python-io python-netclient python-datetime \
   python-logging python-threading python-math python-fcntl python-resource"

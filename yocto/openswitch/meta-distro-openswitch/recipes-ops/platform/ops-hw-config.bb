@@ -7,7 +7,7 @@ DEPENDS = "yaml-cpp gtest i2c-tools"
 SRC_URI = "git://git.openswitch.net/openswitch/ops-hw-config;protocol=http;branch=rel/dill \
 "
 
-SRCREV = "4f44457de6b82d705f2fa38827f39f7f53c9abf0"
+SRCREV = "c356da59abe2311a5d03be0c6420b18f015e0762"
 
 PLATFORM_PATH?="${MACHINE}"
 

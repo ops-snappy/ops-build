@@ -9,7 +9,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-classifierd;protocol=http;bra
            file://ops-classifierd.service \
 "
 
-SRCREV = "5b9771f6ae683790c78e737f7613bdcb2edef38d"
+SRCREV = "93f76ce85fca5ed03a8e7c076252db5fd4fc3b61"
 
 FILES_${PN} = "${libdir}/openvswitch/plugins ${includedir}/plugins/* ${bindir} ${bindir}/ops-classifierd"
 
@@ -34,6 +34,5 @@ FILES_${PN} += "/usr/share/opsplugins"
 FILES_${PN} += "/usr/lib/cli/plugins/"
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE_${PN} = "ops-classifierd.service"
-SYSTEMD_AUTO_ENABLE = "disable"
 
 inherit openswitch cmake pkgconfig systemd

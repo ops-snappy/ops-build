@@ -3,7 +3,7 @@ LICENSE = "GPL-2.0 & LGPL-2.0"
 LIC_FILES_CHKSUM = "file://COPYING;md5=81bcece21748c91ba9992349a91ec11d\
                     file://COPYING.LIB;md5=01ef24401ded36cd8e5d18bfe947240c"
 
-DEPENDS = "ops-utils ops-ovsdb ncurses perl-native openssl ops-supportability"
+DEPENDS = "ops-utils ops-ovsdb ncurses perl-native openssl ops-supportability ops-cli"
 
 # the "ip" command from busybox is not sufficient (flush by protocol flushes all routes)
 RDEPENDS_${PN} += "iproute2"
@@ -12,7 +12,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-quagga;protocol=http;branch=r
     file://ops-zebra.service file://ops-bgpd.service file://ops-ospfd.service \
 "
 
-SRCREV = "06326bc6503d4d4b70421fe680405d25f125df7d"
+SRCREV = "eaf401ce42fde7e91d9b91a875ccd44358a627b5"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.
@@ -28,7 +28,7 @@ EXTRA_OECONF = "--disable-doc --disable-ripd \
  --enable-ovsdb \
 "
 
-FILES_${PN} += "/usr/share/opsplugins"
+FILES_${PN} += "/usr/share/opsplugins /usr/lib/cli/plugins/"
 do_install_append() {
      install -d ${D}${systemd_unitdir}/system
      install -m 0644 ${WORKDIR}/ops-zebra.service ${D}${systemd_unitdir}/system/

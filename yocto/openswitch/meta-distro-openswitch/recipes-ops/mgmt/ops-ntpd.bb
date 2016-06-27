@@ -9,7 +9,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-ntpd;protocol=http;branch=rel
            file://ops-ntpd.service \
 "
 
-SRCREV = "bbfe6670c1843db86f7a5e894606a62c5c8be62d"
+SRCREV = "c87a40bb098a72fcea6a12a69b30f09f3317e4fc"
 
 # Mixing of two classes, the build happens on the source directory.
 inherit openswitch cmake setuptools systemd
@@ -33,8 +33,14 @@ do_install() {
      cmake_do_install
      install -d ${D}${systemd_unitdir}/system
      install -m 0644 ${WORKDIR}/ops-ntpd.service ${D}${systemd_unitdir}/system/
+
+     # Code to copy NTP custom validators to /usr/share/opsplugins.
+     install -d ${D}/usr/share/opsplugins
+     for plugin in $(find ${S}/opsplugins -name "*.py"); do \
+         install -m 0644 ${plugin} ${D}/usr/share/opsplugins
+     done
 }
 
-FILES_${PN} += "/usr/lib/cli/plugins/"
+FILES_${PN} += "/usr/lib/cli/plugins/ /usr/share/opsplugins"
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE_${PN} = "ops-ntpd.service"
