@@ -130,6 +130,7 @@ cfgd \
 mgmt-intf \
 ops-ntpd \
 switchd \
+ops-first-boot \
 
 python-cmds:=\
 ops_ntpd_sync_to_ovsdb \
@@ -434,6 +435,12 @@ install-snappy: install-common
 	cp -a $(ROOTFS)/usr/bin/py* $(DESTDIR)/usr/bin
 	cp -a $(ROOTFS)/usr/lib/libpy* $(DESTDIR)/usr/lib
 	cp -a $(ROOTFS)/usr/lib/python2.7 $(DESTDIR)/usr/lib
+
+ifeq ($(CONFIGURED_PLATFORM),appliance)
+# Fix up hardware descriptor files link.
+	unlink $(DESTDIR)/etc/openswitch/platform/Generic-x86/X86-64
+	cd $(DESTDIR)/etc/openswitch/platform/Generic-x86 && ln -s ../OpenSwitch/Appliance X86-64
+endif
 
 #
 # Point to local debug information for remote debugging on target
