@@ -49,6 +49,20 @@ index b2e85ac..43234dc 100644
          yaml_parser_delete(&parser);
          return;
      }
+@@ -602,9 +610,12 @@ sysd_update_sw_info(const struct ovsrec_system *cfg)
+     char   build_str[NSTR];
+     size_t line_len = 0;
+     int i;
++    char   rel_path[256];
+ 
+     /* Open os-release file with the os version information */
+-    os_ver_fp = fopen(OS_RELEASE_FILE_PATH, "r");
++    snprintf(rel_path, sizeof(rel_path), "%s" OS_RELEASE_FILE_PATH,
++             getenv("OPENSWITCH_INSTALL_PATH"));
++    os_ver_fp = fopen(rel_path, "r");
+     if (NULL == os_ver_fp) {
+         VLOG_ERR("Unable to find system OS release. File %s was not found",
+                  OS_RELEASE_FILE_PATH);
 @@ -984,6 +992,6 @@ void
  sysd_wait(void)
  {

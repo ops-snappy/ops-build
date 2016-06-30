@@ -436,6 +436,8 @@ install-snappy: install-common
 	cp -a $(ROOTFS)/usr/lib/libpy* $(DESTDIR)/usr/lib
 	cp -a $(ROOTFS)/usr/lib/python2.7 $(DESTDIR)/usr/lib
 
+	cp -a $(ROOTFS)/etc/os-release $(DESTDIR)/etc
+
 ifeq ($(CONFIGURED_PLATFORM),appliance)
 # Fix up hardware descriptor files link.
 	unlink $(DESTDIR)/etc/openswitch/platform/Generic-x86/X86-64
