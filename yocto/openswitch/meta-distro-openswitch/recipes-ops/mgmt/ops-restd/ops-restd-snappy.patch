@@ -1,36 +1,38 @@
 diff --git a/opsrest/settings.py b/opsrest/settings.py
-index 9687426..ca29e6e 100755
+index 9687426..ba7a29d 100755
 --- a/opsrest/settings.py
 +++ b/opsrest/settings.py
-@@ -12,7 +12,7 @@
+@@ -12,8 +12,9 @@
  #  License for the specific language governing permissions and limitations
  #  under the License.
  
 -import os.path
 +import os
  import custom
++import ovs.dirs
  
  from tornado.options import define
-@@ -27,12 +27,12 @@ settings['logging'] = 'info'
+ 
+@@ -27,12 +28,12 @@ settings['logging'] = 'info'
  settings["static_path"] = os.path.join(os.path.dirname(__file__), "static")
  settings["template_path"] = os.path.join(os.path.dirname(__file__),
                                           "templates")
 -settings['ovs_remote'] = 'unix:/var/run/openvswitch/db.sock'
 -settings['ovs_schema'] = '/usr/share/openvswitch/vswitch.ovsschema'
 -settings['ext_schema'] = '/usr/share/openvswitch/vswitch.extschema'
-+settings['ovs_remote'] = "unix:%s/var/run/openvswitch/db.sock" % os.environ.get("OPENSWITCH_DATA_PATH", "")
-+settings['ovs_schema'] = "%s/usr/share/openvswitch/vswitch.ovsschema" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
-+settings['ext_schema'] = "%s/usr/share/openvswitch/vswitch.extschema" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
++settings['ovs_remote'] = "unix:%s/db.sock" % ovs.dirs.RUNDIR
++settings['ovs_schema'] = "%s/vswitch.ovsschema" % ovs.dirs.PKGDATADIR
++settings['ext_schema'] = "%s/vswitch.extschema" % ovs.dirs.PKGDATADIR
  settings['auth_enabled'] = True
 -settings['cfg_db_schema'] = '/usr/share/openvswitch/configdb.ovsschema'
-+settings['cfg_db_schema'] = "%s/usr/share/openvswitch/configdb.ovsschema" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
++settings['cfg_db_schema'] = "%s/configdb.ovsschema" % ovs.dirs.PKGDATADIR
  
  settings["account_schema"] = os.path.join(os.path.dirname(custom.__file__),
                                            'schemas/Account.json')
 -settings["passwd_srv_yaml"] = '/etc/ops-passwd-srv/ops-passwd-srv.yaml'
 +settings["passwd_srv_yaml"] = "%s/etc/ops-passwd-srv/ops-passwd-srv.yaml" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 diff --git a/restd.py b/restd.py
-index 961a79d..13de550 100644
+index 961a79d..69dce14 100644
 --- a/restd.py
 +++ b/restd.py
 @@ -31,10 +31,9 @@ from tornado.log import enable_pretty_logging
@@ -41,7 +43,7 @@ index 961a79d..13de550 100644
 -SSL_PRIV_KEY_FILE = "/etc/ssl/private/server-private.key"
 -SSL_CRT_FILE = "/etc/ssl/certs/server.crt"
 -
-+SSL_PRIV_DIR = "%s/etc/ssl/private" % os.environ.get("OPENSWITCH_DATA_PATH", "")
++SSL_PRIV_DIR = "%s/etc/ssl/private" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 +SSL_PRIV_KEY_FILE = "%s/etc/ssl/certs/server-private.key" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 +SSL_CRT_FILE = "%s/etc/ssl/certs/server.crt" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
  

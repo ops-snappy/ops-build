@@ -1,0 +1,13 @@
+diff --git a/ops_mgmtintfcfg.py b/ops_mgmtintfcfg.py
+index d209073..58cb7f9 100644
+--- a/ops_mgmtintfcfg.py
++++ b/ops_mgmtintfcfg.py
+@@ -53,7 +53,7 @@ DEFAULT_DNS_2 = '8.8.8.8'
+ DEFAULT_IPV4 = '0.0.0.0'
+ 
+ DEF_DB = 'unix:/var/run/openvswitch/db.sock'
+-OVS_SCHEMA = '/usr/share/openvswitch/vswitch.ovsschema'
++OVS_SCHEMA = '%s/vswitch.ovsschema' % ovs.dirs.PKGDATADIR
+ 
+ # Anything that starts with 127.0.0 will be taken as loopback address.
+ LOOPBACK_ADDR = "127.0.0"

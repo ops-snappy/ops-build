@@ -1,0 +1,13 @@
+diff --git a/ops_ntpd.py b/ops_ntpd.py
+index 51dfd62..e3d7abc 100644
+--- a/ops_ntpd.py
++++ b/ops_ntpd.py
+@@ -48,7 +48,7 @@ import ops_diagdump
+ # OVSDB information
+ idl = None
+ def_db = 'unix:/var/run/openvswitch/db.sock'
+-ovs_schema = '/usr/share/openvswitch/vswitch.ovsschema'
++ovs_schema = '%s/vswitch.ovsschema' % ovs.dirs.PKGDATADIR
+ 
+ # vlog setup
+ vlog = ovs.vlog.Vlog("ops-ntpd")

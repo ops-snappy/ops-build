@@ -1,13 +1,17 @@
 diff --git a/ops_aaautilspamcfg.py b/ops_aaautilspamcfg.py
-index 3f49320..38769c6 100644
+index 3f49320..d1cf053 100644
 --- a/ops_aaautilspamcfg.py
 +++ b/ops_aaautilspamcfg.py
-@@ -46,15 +46,15 @@ vlog = ovs.vlog.Vlog("ops_aaautilspamcfg")
- def_db = 'unix:/var/run/openvswitch/db.sock'
+@@ -43,18 +43,18 @@ default_row_initialized = 0
+ idl = None
+ 
+ vlog = ovs.vlog.Vlog("ops_aaautilspamcfg")
+-def_db = 'unix:/var/run/openvswitch/db.sock'
++def_db = 'unix:%s/db.sock' % ovs.dirs.RUNDIR
  
  # Schema path
 -ovs_schema = '/usr/share/openvswitch/vswitch.ovsschema'
-+ovs_schema = "%s/vswitch.ovsschema" % os.environ.get("OVS_PKGDATADIR", """/usr/share/openvswitch""")
++ovs_schema = "%s/vswitch.ovsschema" % ovs.dirs.PKGDATADIR
  
  # Program control
  exiting = False
