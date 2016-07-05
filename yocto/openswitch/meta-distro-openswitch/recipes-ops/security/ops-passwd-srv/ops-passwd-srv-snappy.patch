@@ -1,0 +1,67 @@
+diff --git a/src/lib/passwd_srv_yaml.c b/src/lib/passwd_srv_yaml.c
+index 757488a..0d9b4f3 100644
+--- a/src/lib/passwd_srv_yaml.c
++++ b/src/lib/passwd_srv_yaml.c
+@@ -64,16 +64,22 @@ int add_yaml_path_desc(passwd_yaml_file_path_t *entry, const char *desc)
+ static
+ int add_yaml_file_path(passwd_yaml_file_path_t *entry, const char *file_path)
+ {
++    char *data_rootdir;
++
++    if (!(data_rootdir = getenv("OPENSWITCH_DATA_PATH")))
++        data_rootdir = "";
++
+     if ((NULL == entry) || (NULL == file_path))
+     {
+         return PASSWD_ERR_FATAL;
+     }
+-    else if (PASSWD_SRV_MAX_STR_SIZE < (strlen(file_path)+1))
++    else if (PASSWD_SRV_MAX_STR_SIZE < (strlen(file_path)+strlen(data_rootdir)+1))
+     {
+         return PASSWD_ERR_FATAL;
+     }
+ 
+-    memcpy(entry->path, file_path, (strlen(file_path)+1));
++    snprintf(entry->path, PASSWD_SRV_MAX_STR_SIZE, "%s%s",
++             data_rootdir, file_path);
+ 
+     return PASSWD_ERR_SUCCESS;
+ }
+@@ -267,6 +273,8 @@ int parse_passwd_srv_yaml()
+     yaml_event_t  event;
+     enum PASSWD_yaml_key_e event_value, current_state;
+     passwd_yaml_file_path_t *yaml_entry = NULL;
++    char path[PASSWD_SRV_MAX_STR_SIZE];
++    char *install_rootdir;
+ 
+     memset(&parser, 0, sizeof(parser));
+     memset(&event, 0, sizeof(event));
+@@ -279,7 +287,10 @@ int parse_passwd_srv_yaml()
+         return PASSWD_ERR_FATAL;
+     }
+ 
+-    if(NULL == (fp = fopen(PASSWD_SRV_YAML_FILE, "r")))
++    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
++        install_rootdir = "";
++    snprintf(path, sizeof(path), "%s%s", install_rootdir, PASSWD_SRV_YAML_FILE);
++    if(NULL == (fp = fopen(path, "r")))
+     {
+         VLOG_ERR("Failed to open yaml file");
+         yaml_parser_delete(&parser);
+diff --git a/src/passwd_srvd.c b/src/passwd_srvd.c
+index 30fceff..e398723 100644
+--- a/src/passwd_srvd.c
++++ b/src/passwd_srvd.c
+@@ -134,9 +134,11 @@ create_directory()
+     /* set group to be ovsdb_group */
+     if ((passwd_grp = getgrnam(OVSDB_GROUP)))
+     {
++        setgid(passwd_grp->gr_gid);
++    } else {
++        /* See TG-1562 */
+         /* if group returns NULL, skip setting gid */
+         VLOG_INFO("Unable to get ovsdb-client group information");
+-        setgid(passwd_grp->gr_gid);
+     }
+ 
+     if ((0 == stat(PASSWD_RUN_DIR, &f_stat)) && (0 != remove(PASSWD_RUN_DIR)))
