@@ -119,6 +119,7 @@ ovsdb-client \
 ovsdb-tool \
 ovs-appctl \
 nwdiag \
+openssl \
 cfgdbutil \
 
 sbin-cmds:=\

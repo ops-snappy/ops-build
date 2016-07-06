@@ -32,10 +32,10 @@ index 9687426..ba7a29d 100755
 -settings["passwd_srv_yaml"] = '/etc/ops-passwd-srv/ops-passwd-srv.yaml'
 +settings["passwd_srv_yaml"] = "%s/etc/ops-passwd-srv/ops-passwd-srv.yaml" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 diff --git a/restd.py b/restd.py
-index 961a79d..69dce14 100644
+index 961a79d..28e4522 100644
 --- a/restd.py
 +++ b/restd.py
-@@ -31,10 +31,9 @@ from tornado.log import enable_pretty_logging
+@@ -31,14 +31,16 @@ from tornado.log import enable_pretty_logging
  options.logging = settings['logging']
  enable_pretty_logging()
  
@@ -43,9 +43,17 @@ index 961a79d..69dce14 100644
 -SSL_PRIV_KEY_FILE = "/etc/ssl/private/server-private.key"
 -SSL_CRT_FILE = "/etc/ssl/certs/server.crt"
 -
-+SSL_PRIV_DIR = "%s/etc/ssl/private" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
-+SSL_PRIV_KEY_FILE = "%s/etc/ssl/certs/server-private.key" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
-+SSL_CRT_FILE = "%s/etc/ssl/certs/server.crt" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
++SSL_PRIV_DIR = "%s/etc/ssl/private" % os.environ.get("OPENSWITCH_DATA_PATH", "")
++SSL_PRIV_KEY_FILE = "%s/etc/ssl/certs/server-private.key" % os.environ.get("OPENSWITCH_DATA_PATH", "")
++SSL_CRT_DIR = "%s/etc/ssl/certs" % os.environ.get("OPENSWITCH_DATA_PATH", "")
++SSL_CRT_FILE = "%s/etc/ssl/certs/server.crt" % os.environ.get("OPENSWITCH_DATA_PATH", "")
  
  def create_ssl_pki():
      if not os.path.exists(SSL_PRIV_DIR):
+-        os.mkdir(SSL_PRIV_DIR, 0700)
++        os.makedirs(SSL_PRIV_DIR, 0700)
++    if not os.path.exists(SSL_CRT_DIR):
++        os.makedirs(SSL_CRT_DIR, 0700)
+ 
+     if os.path.isfile(SSL_CRT_FILE) and os.path.isfile(SSL_PRIV_KEY_FILE):
+         # Create these files only once on system bootup.
