@@ -1,0 +1,73 @@
+diff --git a/vtysh/vtysh.c b/vtysh/vtysh.c
+index 87b06f5..5530291 100755
+--- a/vtysh/vtysh.c
++++ b/vtysh/vtysh.c
+@@ -152,6 +152,8 @@ bool rbac_check_user_permission(char * username, char * permission)
+     lt_dlhandle dhhandle = 0;
+     bool retval = 0;
+     bool (*fun_ptr)(const char *, const char *) = NULL;
++    char libPath[VTYSH_MAX_PATHNAME_LEN+1];
++
+     if ((username == NULL) || (permission == NULL))
+     {
+        return false;
+@@ -159,7 +161,10 @@ bool rbac_check_user_permission(char * username, char * permission)
+     lt_dlinit();
+     lt_dlerror();
+ 
+-    dhhandle = lt_dlopen ("/usr/lib/librbac.so.0.1.0");
++    snprintf(libPath, sizeof(libPath), "%s/usr/lib/librbac.so.0.1.0",
++             getenv("OPENSWITCH_INSTALL_PATH"));
++
++    dhhandle = lt_dlopen (libPath);
+ 
+     if (lt_dlerror())
+     {
+diff --git a/vtysh/vtysh.h b/vtysh/vtysh.h
+index 5a4a288..b281c7b 100644
+--- a/vtysh/vtysh.h
++++ b/vtysh/vtysh.h
+@@ -48,6 +48,7 @@
+ #define VTYSH_MAX_ALIAS_DEF_LEN   30
+ #define VTYSH_MAX_ALIAS_DEF_LEN_WITH_ARGS   40
+ #define VTYSH_MAX_ALIAS_LIST_LEN 400
++#define VTYSH_MAX_PATHNAME_LEN   256
+ 
+ struct vtysh_alias_data {
+    char alias_def_str[VTYSH_MAX_ALIAS_DEF_LEN];
+diff --git a/vtysh/vtysh_main.c b/vtysh/vtysh_main.c
+index 90a6981..15f9c31 100644
+--- a/vtysh/vtysh_main.c
++++ b/vtysh/vtysh_main.c
+@@ -291,6 +291,7 @@ main (int argc, char **argv, char **env)
+   char *temp_db = NULL;
+   pthread_t vtysh_ovsdb_if_thread;
+   struct passwd *pw = NULL;
++  char path[VTYSH_MAX_PATHNAME_LEN+1];
+ 
+   /* set CONSOLE as OFF and SYSLOG as DBG for ops-cli VLOG moduler list.*/
+   vlog_set_verbosity("CONSOLE:OFF");
+@@ -395,7 +396,10 @@ main (int argc, char **argv, char **env)
+   vty->type = VTY_SHELL;
+   vty->node = VIEW_NODE;
+   cmd_init(0);
+-  plugins_cli_init(FEATURES_CLI_PATH);
++
++  snprintf(path, sizeof(path), "%s%s", getenv("OPENSWITCH_INSTALL_PATH"),
++           FEATURES_CLI_PATH);
++  plugins_cli_init(path);
+   ret = pthread_create(&vtysh_ovsdb_if_thread,
+                        (pthread_attr_t *)NULL,
+                        vtysh_ovsdb_main_thread,
+diff --git a/vtysh/vtysh_ovsdb_if.c b/vtysh/vtysh_ovsdb_if.c
+index ff68a5c..b402597 100644
+--- a/vtysh/vtysh_ovsdb_if.c
++++ b/vtysh/vtysh_ovsdb_if.c
+@@ -228,6 +228,7 @@ ospf_ovsdb_init()
+     /* System table */
+     ovsdb_idl_add_table(idl, &ovsrec_table_system);
+     ovsdb_idl_add_column(idl, &ovsrec_system_col_router_id);
++    ovsdb_idl_add_column(idl, &ovsrec_system_col_cur_cfg);
+ 
+ 
+     /* OSPF Router */

@@ -63,6 +63,11 @@ libaudit \
 
 relocate-bins:=\
 
+snappy-local-bins:=\
+openssl \
+gdb \
+gdbserver \
+
 usr-libs:=\
 librbac \
 libsupportability \
@@ -101,7 +106,7 @@ ops-powerd \
 vtysh \
 ops-classifierd \
 ops-passwd-srv \
-
+ops-stpd \
 
 
 sbin-daemons:=\
@@ -119,7 +124,6 @@ ovsdb-client \
 ovsdb-tool \
 ovs-appctl \
 nwdiag \
-openssl \
 cfgdbutil \
 
 sbin-cmds:=\
@@ -422,6 +426,10 @@ install-debian: install-common
 #
 
 install-snappy: install-common
+
+	for i in $(snappy-local-bins) ; do \
+		$(call install-file,$$i,$(ROOTFS)/usr/bin,$(DESTDIR)/usr/bin) ; \
+	done
 
 	for i in $(relocated-usr-libs) ; do \
 		$(call install-lib,$$i,$(ROOTFS)/usr/lib,$(DESTDIR)/usr/lib) ; \

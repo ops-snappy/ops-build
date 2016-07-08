@@ -1,3 +1,52 @@
+diff --git a/src/cli/supportability_vty.c b/src/cli/supportability_vty.c
+index 9877461..54c135b 100644
+--- a/src/cli/supportability_vty.c
++++ b/src/cli/supportability_vty.c
+@@ -56,9 +56,11 @@ install_show_vlog()
+     char str[MAX_FILENAME_SIZE] = {0,};
+     char *ptr = NULL, *cmd = NULL;
+     int install = 0;
+-    fd = opendir(PID_DIRECTORY);
++    snprintf(str, sizeof(str), "%s" PID_DIRECTORY,
++             getenv("OPENSWITCH_DATA_PATH"));
++    fd = opendir(str);
+     if(fd == NULL) {
+-        VLOG_ERR("Directory open failure");
++        VLOG_ERR("Directory %s open failure", str);
+         return 1;
+     }
+     cmd = (char*)calloc(MAX_DAEMONS, MAX_FEATURE_NAME_SIZE);
+@@ -220,10 +222,13 @@ install_show_tech()
+         free(help);
+         return 1;
+     }
+-    char* filename="/etc/openswitch/supportability/ops_showtech.yaml";
++    char filename[MAX_FILENAME_SIZE];
++    snprintf(filename, sizeof(filename),
++             "%s/etc/openswitch/supportability/ops_showtech.yaml",
++             getenv("OPENSWITCH_INSTALL_PATH"));
+     FILE* fh = fopen(filename, "r");
+     if (fh == NULL) {
+-        VLOG_ERR("Failed to open file");
++        VLOG_ERR("Failed to open file %s", filename);
+         free(cmd);
+         free(help);
+         return 1;
+@@ -303,9 +308,12 @@ install_show_evnts()
+         free(cmd);
+         return 1;
+     }
+-    FILE* fh = fopen(EVENTS_YAML_FILE, "r");
++    char filename[MAX_FILENAME_SIZE];
++    snprintf(filename, sizeof(filename), "%s" EVENTS_YAML_FILE,
++             getenv("OPENSWITCH_INSTALL_PATH"));
++    FILE* fh = fopen(filename, "r");
+     if (fh == NULL) {
+-        VLOG_ERR("Failed to open file");
++        VLOG_ERR("Failed to open file %s", filename);
+         free(cmd);
+         return 1;
+     }
 diff --git a/src/eventlog/eventlog.c b/src/eventlog/eventlog.c
 index 038208e..299d54c 100644
 --- a/src/eventlog/eventlog.c
@@ -34,3 +83,38 @@ index 038208e..299d54c 100644
          return -1;
      }
      index = find_last_index();
+diff --git a/src/featuremapping/feature_mapping.c b/src/featuremapping/feature_mapping.c
+index 1a52aae..cc74f1d 100644
+--- a/src/featuremapping/feature_mapping.c
++++ b/src/featuremapping/feature_mapping.c
+@@ -29,6 +29,8 @@
+ #include <stdlib.h>
+ #include "openvswitch/vlog.h"
+ 
++#define MAX_FILENAME_SIZE 256
++
+ VLOG_DEFINE_THIS_MODULE(feature_mapping);
+ 
+ static int
+@@ -197,6 +199,7 @@ parse_feature_mapping_yaml(void)
+                       break; \
+                   }
+ 
++    char filename[MAX_FILENAME_SIZE];
+     FILE *fh=NULL;
+     yaml_parser_t parser;
+     yaml_event_t  event;
+@@ -211,9 +214,11 @@ parse_feature_mapping_yaml(void)
+         VLOG_ERR("Failed to initialize parser!");
+         return 1;
+     }
+-    fh = fopen(FEATURE_MAPPING_CONF, "r");
++    snprintf(filename, sizeof(filename), "%s" FEATURE_MAPPING_CONF,
++             getenv("OPENSWITCH_INSTALL_PATH"));
++    fh = fopen(filename, "r");
+     if(fh == NULL) {
+-        VLOG_ERR("Failed to open file :%s",FEATURE_MAPPING_CONF);
++        VLOG_ERR("Failed to open file %s",filename);
+         yaml_parser_delete(&parser);
+         return 1;
+     }
