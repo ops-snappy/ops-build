@@ -107,7 +107,7 @@ vtysh \
 ops-classifierd \
 ops-passwd-srv \
 ops-stpd \
-
+ops-l2macd \
 
 sbin-daemons:=\
 ops-bgpd \
