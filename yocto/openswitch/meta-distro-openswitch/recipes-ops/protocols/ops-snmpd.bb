@@ -9,6 +9,7 @@ RDEPENDS_${PN} = "net-snmp-client net-snmp-server net-snmp-mibs net-snmp-libs pe
 SRC_URI = "git://git.openswitch.net/openswitch/ops-snmpd;protocol=http;branch=rel/dill \
            file://ops-snmpd.service\
            file://snmpd.conf\
+           file://ops-snmpd-snappy.patch\
            "
 
 SRCREV="f6eaa26280772e5782d3ee59e95153c82b1322ef"

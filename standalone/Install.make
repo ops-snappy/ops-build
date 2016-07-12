@@ -57,11 +57,21 @@ relocated-usr-libs:=\
 libcrypto \
 libssl \
 libnetsnmp \
+libnetsnmpagent \
+libnetsnmptrapd \
+libnetsnmphelpers \
+libnetsnmpmibs \
 
 relocated-libs:=\
 libaudit \
 
 relocate-bins:=\
+snmpwalk \
+snmpbulkget \
+snmpget \
+snmpset \
+snmpgetnext \
+snmpstatus \
 
 snappy-local-bins:=\
 openssl \
@@ -89,6 +99,7 @@ libatomic \
 libospf  \
 libzebra \
 
+
 bin-daemons:=\
 ops-arpmgrd \
 ops-fand \
@@ -108,6 +119,8 @@ ops-classifierd \
 ops-passwd-srv \
 ops-stpd \
 ops-l2macd \
+ops-snmpd \
+
 
 sbin-daemons:=\
 ops-bgpd \
@@ -116,6 +129,7 @@ ops-lldpd \
 ops-ospfd \
 ops-zebra \
 ovsdb-server \
+snmpd \
 
 bin-cmds:=\
 ops-broadview \
@@ -155,8 +169,11 @@ etc/openswitch/platform \
 etc/raddb \
 usr/lib/cli/plugins \
 usr/lib/openvswitch/plugins \
+usr/lib/snmp/plugins \
 etc/ops-passwd-srv \
 usr/share/opsplugins \
+etc/snmp \
+usr/share/snmp \
 
 debug-dirs:=\
 usr/lib/debug \
