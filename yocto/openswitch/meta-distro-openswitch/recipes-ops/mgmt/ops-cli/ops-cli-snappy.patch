@@ -1,3 +1,19 @@
+diff --git a/vtysh/utils/passwd_srv_utils.c b/vtysh/utils/passwd_srv_utils.c
+index ae830e5..79a9d53 100644
+--- a/vtysh/utils/passwd_srv_utils.c
++++ b/vtysh/utils/passwd_srv_utils.c
+@@ -63,7 +63,10 @@ int passwd_srv_path_manager_init(void)
+     lt_dlerror();
+ 
+     /* open shared object to be used */
+-    so_handle = lt_dlopen(PASSWD_SRV_SO_LIB);
++    char lib_path[PASSWD_SRV_MAX_STR_SIZE];
++    snprintf(lib_path, sizeof(lib_path), "%s" PASSWD_SRV_SO_LIB,
++             getenv("OPENSWITCH_INSTALL_PATH"));
++    so_handle = lt_dlopen(lib_path);
+ 
+     if (lt_dlerror())
+     {
 diff --git a/vtysh/vtysh.c b/vtysh/vtysh.c
 index 87b06f5..5530291 100755
 --- a/vtysh/vtysh.c

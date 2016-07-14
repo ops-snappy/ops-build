@@ -1,0 +1,13 @@
+diff --git a/plugins/plugins_yaml.c b/plugins/plugins_yaml.c
+index 4b0218c..5b43d38 100644
+--- a/plugins/plugins_yaml.c
++++ b/plugins/plugins_yaml.c
+@@ -59,7 +59,7 @@ dmidecode_exists(char *cmd_path)
+     struct stat sbuf;
+ 
+     /* Look for "dmidecode" command */
+-    for (i = 0; i < sizeof(paths); i++) {
++    for (i = 0; i < sizeof(paths)/sizeof(paths[0]); i++) {
+         snprintf(buf, sizeof(buf), "%s/%s", paths[i], DMIDECODE_NAME);
+         if ((stat(buf, &sbuf) == 0) && (sbuf.st_mode & S_IXUSR)) {
+             strncpy(cmd_path, buf, sizeof(buf));

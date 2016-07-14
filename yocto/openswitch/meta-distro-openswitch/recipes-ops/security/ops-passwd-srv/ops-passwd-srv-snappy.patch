@@ -48,6 +48,22 @@ index 757488a..0d9b4f3 100644
      {
          VLOG_ERR("Failed to open yaml file");
          yaml_parser_delete(&parser);
+diff --git a/src/passwd_srv_util.c b/src/passwd_srv_util.c
+index 3aa0a1d..d0bb627 100644
+--- a/src/passwd_srv_util.c
++++ b/src/passwd_srv_util.c
+@@ -183,9 +183,10 @@ cleanup:
+     umask(S_IRUSR | S_IWUSR | S_IRGRP);
+     if ((ovsdb_client_grp = getgrnam("ovsdb-client")))
+     {
++        chown(pub_key_path, getuid(), ovsdb_client_grp->gr_gid);
++    } else {
+         /* if group is not found, skip setting gid */
+         VLOG_INFO("Couldn't set the public key to ovsdb-client group");
+-        chown(pub_key_path, getuid(), ovsdb_client_grp->gr_gid);
+     }
+ 
+     /* Calling function must do RSA_free(rsa) when it is done with resource */
 diff --git a/src/passwd_srvd.c b/src/passwd_srvd.c
 index 30fceff..e398723 100644
 --- a/src/passwd_srvd.c

@@ -1,3 +1,16 @@
+diff --git a/cfgdb.py b/cfgdb.py
+index 07b2c10..ff406fd 100644
+--- a/cfgdb.py
++++ b/cfgdb.py
+@@ -30,7 +30,7 @@ idl = None
+ def_db = 'unix:/var/run/openvswitch/db.sock'
+ 
+ # OPS_TODO: Need to pull this from the build env
+-cfgdb_schema = '/usr/share/openvswitch/configdb.ovsschema'
++cfgdb_schema = "%s/configdb.ovsschema" % ovs.dirs.PKGDATADIR
+ 
+ #Configdb tabe names
+ CONFIG_TABLE = "config"
 diff --git a/ops_cfgd.py b/ops_cfgd.py
 index 64b0a79..36b9174 100644
 --- a/ops_cfgd.py

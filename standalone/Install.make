@@ -98,6 +98,7 @@ libyaml-cpp \
 libatomic \
 libospf  \
 libzebra \
+libpasswd_srv \
 
 
 bin-daemons:=\
