@@ -206,35 +206,14 @@ common-password-access \
 
 ifeq ($(CONFIGURED_PLATFORM),appliance)
 
-ovssbin-daemons:=\
-ovs-vswitchd-sim \
-ovsdb-server \
-
-openvswitch-bin-cmds:=\
-ovs-appctl \
-ovs-benchmark \
-ovs-dpctl \
-ovs-dpctl-top \
-ovs-l3ping \
-ovs-ofctl \
-ovs-parse-backtrace \
-ovs-pcap \
-ovs-pki \
-ovs-tcpundump \
-ovs-test \
-ovs-vlan-test \
-ovs-vsctl \
-ovsdb-client \
-ovsdb-tool \
-vtep-ctl \
-
-openvswitch-share:=\
-vswitch.ovsschema \
-vtep.ovsschema \
-
 other-svcs+=\
 openvswitch-sim \
 ovsdb-server-sim \
+
+dirs+=\
+opt/openvswitch/bin \
+opt/openvswitch/sbin \
+opt/openvswitch/share \
 
 else
 
@@ -314,7 +293,7 @@ install-common:
 ifeq ($(CONFIGURED_PLATFORM),appliance)
 	install -d $(DESTDIR)/opt/openvswitch/bin
 	install -d $(DESTDIR)/opt/openvswitch/sbin
-	install -d $(DESTDIR)/opt/openvswitch/share/openvswitch
+	install -d $(DESTDIR)/opt/openvswitch/share
 	install -d $(DESTDIR)/var/run/openvswitch-sim
 endif
 
@@ -364,20 +343,6 @@ endif
 
 	install -d $(DESTDIR)/usr/lib/openvswitch/plugins
 	install $(ROOTFS)/usr/lib/openvswitch/plugins/* $(DESTDIR)/usr/lib/openvswitch/plugins
-
-ifeq ($(CONFIGURED_PLATFORM),appliance)
-	for i in $(ovssbin-daemons) ; do \
-		$(call install-daemon,$$i,$(ROOTFS)/opt/openvswitch/sbin,$(DESTDIR)/opt/openvswitch/sbin) ; \
-	done
-
-	for i in $(openvswitch-bin-cmds) ; do \
-		$(call install-file,$$i,$(ROOTFS)/opt/openvswitch/bin,$(DESTDIR)/opt/openvswitch/bin) ; \
-	done
-
-	for i in $(openvswitch-share) ; do \
-		$(call install-file,$$i,$(ROOTFS)/opt/openvswitch/share/openvswitch,$(DESTDIR)/opt/openvswitch/share/openvswitch) ; \
-	done
-endif
 
 	$(call install-file,image.manifest,$(ROOTFS)/etc/openswitch,$(DESTDIR)/etc/openswitch)
 	$(call install-file,useradd,$(ROOTFS)/etc/sudoers.d,$(DESTDIR)/etc/sudoers.d)
