@@ -10,9 +10,8 @@ index 112b12a..e9f9f2b 100644
  
  daemon_info_t **daemons = NULL;
  int num_daemons = 0;
- /** @} end of group sysd */
 diff --git a/src/sysd_ovsdb_if.c b/src/sysd_ovsdb_if.c
-index b2e85ac..43234dc 100644
+index b2e85ac..26e729b 100644
 --- a/src/sysd_ovsdb_if.c
 +++ b/src/sysd_ovsdb_if.c
 @@ -58,6 +58,7 @@ VLOG_DEFINE_THIS_MODULE(ovsdb_if);
@@ -23,21 +22,20 @@ index b2e85ac..43234dc 100644
  
  enum {
      VALUE,
-@@ -451,6 +452,13 @@ sysd_add_package_info()
+@@ -451,6 +452,12 @@ sysd_add_package_info()
      struct ovsrec_package_info *row  = NULL;
      struct ovsdb_idl_txn       *txn  = NULL;
      enum ovsdb_idl_txn_status  txn_status = TXN_ERROR;
 +    char version_path[1024];
 +    char *install_rootdir;
 +
-+    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
-+        install_rootdir  = "";
++    install_rootdir = (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : "");
 +    snprintf(version_path, sizeof(version_path), "%s%s",
 +             install_rootdir, VERSION_DETAIL_FILE_PATH);
  
      /* Initialize parser */
      if (!yaml_parser_initialize(&parser)) {
-@@ -459,9 +467,9 @@ sysd_add_package_info()
+@@ -459,9 +466,9 @@ sysd_add_package_info()
      }
  
      /* Open /var/lib/version_detail.yaml file */
@@ -49,7 +47,7 @@ index b2e85ac..43234dc 100644
          yaml_parser_delete(&parser);
          return;
      }
-@@ -602,9 +610,12 @@ sysd_update_sw_info(const struct ovsrec_system *cfg)
+@@ -602,9 +609,12 @@ sysd_update_sw_info(const struct ovsrec_system *cfg)
      char   build_str[NSTR];
      size_t line_len = 0;
      int i;
@@ -58,12 +56,12 @@ index b2e85ac..43234dc 100644
      /* Open os-release file with the os version information */
 -    os_ver_fp = fopen(OS_RELEASE_FILE_PATH, "r");
 +    snprintf(rel_path, sizeof(rel_path), "%s" OS_RELEASE_FILE_PATH,
-+             getenv("OPENSWITCH_INSTALL_PATH"));
++             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""));
 +    os_ver_fp = fopen(rel_path, "r");
      if (NULL == os_ver_fp) {
          VLOG_ERR("Unable to find system OS release. File %s was not found",
                   OS_RELEASE_FILE_PATH);
-@@ -984,6 +992,6 @@ void
+@@ -984,6 +994,6 @@ void
  sysd_wait(void)
  {
      ovsdb_idl_wait(idl);
@@ -72,10 +70,10 @@ index b2e85ac..43234dc 100644
  } /* sysd_wait */
  /** @} end of group sysd */
 diff --git a/src/sysd_util.c b/src/sysd_util.c
-index 70651c8..9ebbd70 100644
+index 70651c8..8056174 100644
 --- a/src/sysd_util.c
 +++ b/src/sysd_util.c
-@@ -147,38 +155,47 @@ get_manuf_and_prodname(char *cmd_path, char **manufacturer, char **product_name)
+@@ -147,38 +155,45 @@ get_manuf_and_prodname(char *cmd_path, char **manufacturer, char **product_name)
  static int
  create_link_to_desc_files(char *manufacturer, char *product_name)
  {
@@ -90,10 +88,8 @@ index 70651c8..9ebbd70 100644
  
 -    snprintf(hw_desc_dir, sizeof(hw_desc_dir), "%s/%s/%s",
 -             HWDESC_FILES_PATH, manufacturer, product_name);
-+    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
-+        install_rootdir  = "";
-+    if (!(data_rootdir = getenv("OPENSWITCH_DATA_PATH")))
-+        data_rootdir  = "";
++    install_rootdir = (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : "");
++    data_rootdir = (getenv("OPENSWITCH_DATA_PATH") ? getenv("OPENSWITCH_DATA_PATH") : "");
 +    snprintf(path, sizeof(path), "%s%s/%s/%s",
 +             install_rootdir, HWDESC_FILES_PATH, manufacturer, product_name);
  
@@ -136,7 +132,7 @@ index 70651c8..9ebbd70 100644
          return -1;
      }
  
-@@ -451,7 +468,14 @@ sysd_set_num_hw_daemons()
+@@ -451,7 +466,13 @@ sysd_set_num_hw_daemons()
  int
  sysd_read_manifest_file(void)
  {
@@ -144,8 +140,7 @@ index 70651c8..9ebbd70 100644
 +    char image_manifest_path[1024];
 +    char *install_rootdir;
 +
-+    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
-+        install_rootdir  = "";
++    install_rootdir = (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : "");
 +    snprintf(image_manifest_path, sizeof(image_manifest_path), "%s%s",
 +             install_rootdir, IMAGE_MANIFEST_FILE_PATH);
 +    manifest_info = json_from_file(image_manifest_path);
