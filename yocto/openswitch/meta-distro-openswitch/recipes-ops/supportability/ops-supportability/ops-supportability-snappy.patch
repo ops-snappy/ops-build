@@ -1,22 +1,19 @@
 diff --git a/src/cli/supportability_vty.c b/src/cli/supportability_vty.c
-index 9877461..54c135b 100644
+index 9877461..c92261d 100644
 --- a/src/cli/supportability_vty.c
 +++ b/src/cli/supportability_vty.c
-@@ -56,9 +56,11 @@ install_show_vlog()
+@@ -56,7 +56,9 @@ install_show_vlog()
      char str[MAX_FILENAME_SIZE] = {0,};
      char *ptr = NULL, *cmd = NULL;
      int install = 0;
 -    fd = opendir(PID_DIRECTORY);
 +    snprintf(str, sizeof(str), "%s" PID_DIRECTORY,
-+             getenv("OPENSWITCH_DATA_PATH"));
++             getenv("OPENSWITCH_DATA_PATH") ? getenv("OPENSWITCH_DATA_PATH") : "");
 +    fd = opendir(str);
      if(fd == NULL) {
--        VLOG_ERR("Directory open failure");
-+        VLOG_ERR("Directory %s open failure", str);
+         VLOG_ERR("Directory open failure");
          return 1;
-     }
-     cmd = (char*)calloc(MAX_DAEMONS, MAX_FEATURE_NAME_SIZE);
-@@ -220,10 +222,13 @@ install_show_tech()
+@@ -220,7 +222,10 @@ install_show_tech()
          free(help);
          return 1;
      }
@@ -24,31 +21,24 @@ index 9877461..54c135b 100644
 +    char filename[MAX_FILENAME_SIZE];
 +    snprintf(filename, sizeof(filename),
 +             "%s/etc/openswitch/supportability/ops_showtech.yaml",
-+             getenv("OPENSWITCH_INSTALL_PATH"));
++             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""));
      FILE* fh = fopen(filename, "r");
      if (fh == NULL) {
--        VLOG_ERR("Failed to open file");
-+        VLOG_ERR("Failed to open file %s", filename);
-         free(cmd);
-         free(help);
-         return 1;
-@@ -303,9 +308,12 @@ install_show_evnts()
+         VLOG_ERR("Failed to open file");
+@@ -303,7 +308,10 @@ install_show_evnts()
          free(cmd);
          return 1;
      }
 -    FILE* fh = fopen(EVENTS_YAML_FILE, "r");
 +    char filename[MAX_FILENAME_SIZE];
 +    snprintf(filename, sizeof(filename), "%s" EVENTS_YAML_FILE,
-+             getenv("OPENSWITCH_INSTALL_PATH"));
++             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""));
 +    FILE* fh = fopen(filename, "r");
      if (fh == NULL) {
--        VLOG_ERR("Failed to open file");
-+        VLOG_ERR("Failed to open file %s", filename);
+         VLOG_ERR("Failed to open file");
          free(cmd);
-         return 1;
-     }
 diff --git a/src/eventlog/eventlog.c b/src/eventlog/eventlog.c
-index 038208e..299d54c 100644
+index 038208e..a28cfab 100644
 --- a/src/eventlog/eventlog.c
 +++ b/src/eventlog/eventlog.c
 @@ -39,7 +39,7 @@ VLOG_DEFINE_THIS_MODULE(eventlog);
@@ -60,16 +50,15 @@ index 038208e..299d54c 100644
  
  /* Function        : strcmp_with_nullcheck
  * Responsibility  : Ensure arguments are not null before calling strcmp
-@@ -169,9 +169,20 @@ parse_yaml_for_category(char *category)
+@@ -169,7 +169,17 @@ parse_yaml_for_category(char *category)
      if(category == NULL) {
          return -1;
      }
 -    fh = fopen(EVENT_YAML_FILE, "r");
 +    if(event_yaml_path == NULL) {
 +        char path[512] = {0,};
-+        char *envv = getenv("OPENSWITCH_INSTALL_PATH");
-+        if (envv)
-+            strcpy(path, envv);
++        char *envv = (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : "");
++        strcpy(path, envv);
 +        if ((strlen(path) + strlen(EVENT_YAML_FILE) + 1) > sizeof(path))
 +            return -1;
 +        strcat(path, EVENT_YAML_FILE);
@@ -78,13 +67,10 @@ index 038208e..299d54c 100644
 +    }
 +    fh = fopen(event_yaml_path, "r");
      if(fh == NULL) {
--        VLOG_ERR("YAML file open failed");
-+        VLOG_ERR("YAML file (%s) open failed", event_yaml_path);
+         VLOG_ERR("YAML file open failed");
          return -1;
-     }
-     index = find_last_index();
 diff --git a/src/featuremapping/feature_mapping.c b/src/featuremapping/feature_mapping.c
-index 1a52aae..cc74f1d 100644
+index 1a52aae..c339e79 100644
 --- a/src/featuremapping/feature_mapping.c
 +++ b/src/featuremapping/feature_mapping.c
 @@ -29,6 +29,8 @@
@@ -110,11 +96,11 @@ index 1a52aae..cc74f1d 100644
      }
 -    fh = fopen(FEATURE_MAPPING_CONF, "r");
 +    snprintf(filename, sizeof(filename), "%s" FEATURE_MAPPING_CONF,
-+             getenv("OPENSWITCH_INSTALL_PATH"));
++             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""));
 +    fh = fopen(filename, "r");
      if(fh == NULL) {
 -        VLOG_ERR("Failed to open file :%s",FEATURE_MAPPING_CONF);
-+        VLOG_ERR("Failed to open file %s",filename);
++        VLOG_ERR("Failed to open file :%s",filename);
          yaml_parser_delete(&parser);
          return 1;
      }

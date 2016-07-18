@@ -1,5 +1,5 @@
 diff --git a/vtysh/utils/passwd_srv_utils.c b/vtysh/utils/passwd_srv_utils.c
-index ae830e5..79a9d53 100644
+index ae830e5..896747e 100644
 --- a/vtysh/utils/passwd_srv_utils.c
 +++ b/vtysh/utils/passwd_srv_utils.c
 @@ -63,7 +63,10 @@ int passwd_srv_path_manager_init(void)
@@ -9,13 +9,13 @@ index ae830e5..79a9d53 100644
 -    so_handle = lt_dlopen(PASSWD_SRV_SO_LIB);
 +    char lib_path[PASSWD_SRV_MAX_STR_SIZE];
 +    snprintf(lib_path, sizeof(lib_path), "%s" PASSWD_SRV_SO_LIB,
-+             getenv("OPENSWITCH_INSTALL_PATH"));
++             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""));
 +    so_handle = lt_dlopen(lib_path);
  
      if (lt_dlerror())
      {
 diff --git a/vtysh/vtysh.c b/vtysh/vtysh.c
-index 87b06f5..5530291 100755
+index 87b06f5..5ec24e8 100755
 --- a/vtysh/vtysh.c
 +++ b/vtysh/vtysh.c
 @@ -152,6 +152,8 @@ bool rbac_check_user_permission(char * username, char * permission)
@@ -33,7 +33,7 @@ index 87b06f5..5530291 100755
  
 -    dhhandle = lt_dlopen ("/usr/lib/librbac.so.0.1.0");
 +    snprintf(libPath, sizeof(libPath), "%s/usr/lib/librbac.so.0.1.0",
-+             getenv("OPENSWITCH_INSTALL_PATH"));
++             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""));
 +
 +    dhhandle = lt_dlopen (libPath);
  
@@ -52,7 +52,7 @@ index 5a4a288..b281c7b 100644
  struct vtysh_alias_data {
     char alias_def_str[VTYSH_MAX_ALIAS_DEF_LEN];
 diff --git a/vtysh/vtysh_main.c b/vtysh/vtysh_main.c
-index 90a6981..15f9c31 100644
+index 90a6981..c1c2eac 100644
 --- a/vtysh/vtysh_main.c
 +++ b/vtysh/vtysh_main.c
 @@ -291,6 +291,7 @@ main (int argc, char **argv, char **env)
@@ -69,7 +69,7 @@ index 90a6981..15f9c31 100644
    cmd_init(0);
 -  plugins_cli_init(FEATURES_CLI_PATH);
 +
-+  snprintf(path, sizeof(path), "%s%s", getenv("OPENSWITCH_INSTALL_PATH"),
++  snprintf(path, sizeof(path), "%s%s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
 +           FEATURES_CLI_PATH);
 +  plugins_cli_init(path);
    ret = pthread_create(&vtysh_ovsdb_if_thread,

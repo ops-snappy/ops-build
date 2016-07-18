@@ -1,15 +1,14 @@
 diff --git a/src/lib/passwd_srv_yaml.c b/src/lib/passwd_srv_yaml.c
-index 757488a..0d9b4f3 100644
+index 757488a..dd7bc0a 100644
 --- a/src/lib/passwd_srv_yaml.c
 +++ b/src/lib/passwd_srv_yaml.c
-@@ -64,16 +64,22 @@ int add_yaml_path_desc(passwd_yaml_file_path_t *entry, const char *desc)
+@@ -64,16 +64,21 @@ int add_yaml_path_desc(passwd_yaml_file_path_t *entry, const char *desc)
  static
  int add_yaml_file_path(passwd_yaml_file_path_t *entry, const char *file_path)
  {
 +    char *data_rootdir;
 +
-+    if (!(data_rootdir = getenv("OPENSWITCH_DATA_PATH")))
-+        data_rootdir = "";
++    data_rootdir = (getenv("OPENSWITCH_DATA_PATH") ? getenv("OPENSWITCH_DATA_PATH") : "");
 +
      if ((NULL == entry) || (NULL == file_path))
      {
@@ -27,7 +26,7 @@ index 757488a..0d9b4f3 100644
  
      return PASSWD_ERR_SUCCESS;
  }
-@@ -267,6 +273,8 @@ int parse_passwd_srv_yaml()
+@@ -267,6 +272,8 @@ int parse_passwd_srv_yaml()
      yaml_event_t  event;
      enum PASSWD_yaml_key_e event_value, current_state;
      passwd_yaml_file_path_t *yaml_entry = NULL;
@@ -36,13 +35,12 @@ index 757488a..0d9b4f3 100644
  
      memset(&parser, 0, sizeof(parser));
      memset(&event, 0, sizeof(event));
-@@ -279,7 +287,10 @@ int parse_passwd_srv_yaml()
+@@ -279,7 +286,9 @@ int parse_passwd_srv_yaml()
          return PASSWD_ERR_FATAL;
      }
  
 -    if(NULL == (fp = fopen(PASSWD_SRV_YAML_FILE, "r")))
-+    if (!(install_rootdir = getenv("OPENSWITCH_INSTALL_PATH")))
-+        install_rootdir = "";
++    install_rootdir = (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : "");
 +    snprintf(path, sizeof(path), "%s%s", install_rootdir, PASSWD_SRV_YAML_FILE);
 +    if(NULL == (fp = fopen(path, "r")))
      {
