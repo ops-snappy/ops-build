@@ -1,76 +1,105 @@
+diff --git a/autoprovision.py b/autoprovision.py
+index 7204372..1a6f92f 100755
+--- a/autoprovision.py
++++ b/autoprovision.py
+@@ -29,9 +29,9 @@ from ovs.db import types
+ # ovs definitions
+ idl = None
+ # OPS_TODO: Need to pull this from the build env
+-DEF_DB = 'unix:/var/run/openvswitch/db.sock'
+-CFGDB_SCHEMA = '/usr/share/openvswitch/configdb.ovsschema'
+-OVS_SCHEMA = '/usr/share/openvswitch/vswitch.ovsschema'
++DEF_DB = 'unix:/%s/run/openvswitch/db.sock' % os.environ.get("OPENSWITCH_INSTALL_PATH", "/var")
++CFGDB_SCHEMA = '%s/usr/share/openvswitch/configdb.ovsschema' %  os.environ.get("OPENSWITCH_INSTALL_PATH", "")
++OVS_SCHEMA = '%s/usr/share/openvswitch/vswitch.ovsschema' %  os.environ.get("OPENSWITCH_INSTALL_PATH", "")
+
+ type_startup_config = "startup"
+
+@@ -39,8 +39,8 @@ SYSTEM_TABLE = "System"
+ OPS_TRUE = "True"
+ PERFORMED = "performed"
+ URL = "url"
+-AUTOPROVISION_SCRIPT = '/var/tmp/autoprovision'
+-AUTOPROVISION_STATUS_FILE = '/var/local/autoprovision'
++AUTOPROVISION_SCRIPT = '%s/var/tmp/autoprovision'% os.environ.get("OPENSWITCH_DATA_PATH", "")
++AUTOPROVISION_STATUS_FILE = '%s/var/local/autoprovision' % os.environ.get("OPENSWITCH_DATA_PATH", "")
+
+
+ #------------------ wait_for_config_complete() ----------------
 diff --git a/ops_aaautilspamcfg.py b/ops_aaautilspamcfg.py
-index 3f49320..d1cf053 100644
+index 3f49320..8a93d3d 100644
 --- a/ops_aaautilspamcfg.py
 +++ b/ops_aaautilspamcfg.py
-@@ -43,18 +43,18 @@ default_row_initialized = 0
+@@ -43,17 +43,16 @@ default_row_initialized = 0
  idl = None
- 
+
  vlog = ovs.vlog.Vlog("ops_aaautilspamcfg")
 -def_db = 'unix:/var/run/openvswitch/db.sock'
 +def_db = 'unix:%s/db.sock' % ovs.dirs.RUNDIR
- 
+
  # Schema path
 -ovs_schema = '/usr/share/openvswitch/vswitch.ovsschema'
 +ovs_schema = "%s/vswitch.ovsschema" % ovs.dirs.PKGDATADIR
- 
+
  # Program control
  exiting = False
  seqno = 0
- 
--PAM_ETC_CONFIG_DIR = "/etc/pam.d/"
+
+ PAM_ETC_CONFIG_DIR = "/etc/pam.d/"
 -RADIUS_CLIENT = "/etc/raddb/server"
--SSHD_CONFIG = "/etc/ssh/sshd_config"
-+PAM_ETC_CONFIG_DIR = "%s/pam.d/" % os.environ.get("OVS_SYSCONFDIR", """/etc""")
-+RADIUS_CLIENT = "%s/raddb/server" % os.environ.get("OVS_SYSCONFDIR", """/etc""")
-+SSHD_CONFIG = "%s/ssh/sshd_config" % os.environ.get("OVS_SYSCONFDIR", """/etc""")
- 
+ SSHD_CONFIG = "/etc/ssh/sshd_config"
+
  dispatch_list = []
- SYSTEM_TABLE = "System"
-@@ -90,6 +90,14 @@ URL = "url"
- RADIUS_PAP = "pap"
- RADIUS_CHAP = "chap"
- 
-+#----------------- get_distro ---------------
-+def get_distro():
-+    """
-+    Name of your Linux distro (in lowercase).
-+    """
-+    with open("/etc/issue") as f:
-+        return f.read().lower().split()[0]
+@@ -254,7 +261,15 @@ def update_server_file():
+             radius_passkey + " " + radius_timeout
+         row_count += 1
+
+-    with open(RADIUS_CLIENT, "w+") as f:
++    # Different distributions use different files for configurating radius
++    # servers. Try to figure out what files are being used by checking
++    # for the existence of these files.
++    if os.path.exists("/etc/raddb/server"):
++        filename="/etc/raddb/server"
++    else:
++        filename = "/etc/pam_radius_auth.conf"
 +
- #---------------- unixctl_exit --------------------------
- def unixctl_exit(conn, unused_argv, unused_aux):
-     global exiting
-@@ -345,7 +353,7 @@ def modify_common_auth_session_file(fallback_value, radius_value,
++    with open(filename, "w+") as f:
+         f.write("\n".join(insert_server_info[count] for count in range(0,
+                 row_count)))
+
+@@ -345,7 +360,7 @@ def modify_common_auth_session_file(fallback_value, radius_value,
      else:
          radius_lib_suffix = "auth.so"
- 
+
 -    local_auth[0] = "auth\t[success=1 default=ignore]\tpam_unix.so nullok\n"
 +    local_auth[0] = "auth\t[success=1 default=ignore]\tpam_unix.so nullok"
      radius_auth[0] = \
          "auth\t[success=1 default=ignore]\tpam_radius_"
      fallback_and_radius_auth[0] = \
-@@ -354,7 +362,7 @@ def modify_common_auth_session_file(fallback_value, radius_value,
+@@ -354,7 +369,7 @@ def modify_common_auth_session_file(fallback_value, radius_value,
      fallback_local_auth[0] =  \
          "auth\t[success=1 default=ignore]\tpam_unix.so\ttry_first_pass\n"
- 
+
 -    local_auth[1] = "session\trequired\tpam_unix.so\n"
 +    local_auth[1] = "session\trequired\tpam_unix.so"
      radius_auth[1] = "session\trequired\tpam_radius_auth.so\n"
- 
+
      fallback_and_radius_auth[1] = \
-@@ -363,14 +371,23 @@ def modify_common_auth_session_file(fallback_value, radius_value,
- 
+@@ -363,14 +378,26 @@ def modify_common_auth_session_file(fallback_value, radius_value,
+
      fallback_local_auth[1] = "session\trequired\tpam_unix.so\n"
- 
+
 -    filename[0] = PAM_ETC_CONFIG_DIR + "common-auth-access"
 -    filename[1] = PAM_ETC_CONFIG_DIR + "common-session-access"
-+    if (get_distro() == "debian"):
-+        filename[0] = PAM_ETC_CONFIG_DIR + "common-auth"
-+        filename[1] = PAM_ETC_CONFIG_DIR + "common-session"
-+    else:
++    # Some Linux distributions use common-auth-access, while others
++    # use common-auth. Test for the existence of the -access version
++    # and use it if exists. Otherwise, use the non-access versions
++    if os.path.exists(PAM_ETC_CONFIG_DIR + "common-auth-access"):
 +        filename[0] = PAM_ETC_CONFIG_DIR + "common-auth-access"
 +        filename[1] = PAM_ETC_CONFIG_DIR + "common-session-access"
++    else:
++        filename[0] = PAM_ETC_CONFIG_DIR + "common-auth"
++        filename[1] = PAM_ETC_CONFIG_DIR + "common-session"
 +
      for count in range(0, 2):
          with open(filename[count], "r") as f:
@@ -85,12 +114,27 @@ index 3f49320..d1cf053 100644
                  del contents[index]
                  break
              elif fallback_and_radius_auth[count] in line:
-@@ -379,7 +396,7 @@ def modify_common_auth_session_file(fallback_value, radius_value,
+@@ -379,7 +406,7 @@ def modify_common_auth_session_file(fallback_value, radius_value,
                  break
- 
+
          if radius_value == OPS_FALSE:
 -            contents.insert(index, local_auth[count])
 +            contents.insert(index, local_auth[count] + "\n")
- 
+
          if radius_value == OPS_TRUE and fallback_value == OPS_FALSE  \
             and count == 0:
+@@ -422,8 +449,12 @@ def update_access_files():
+     commonPasswordText = "pam_unix.so obscure sha512"
+
+     # Hardcoded file path
+-    filename = [PAM_ETC_CONFIG_DIR + "common-password-access",
+-                PAM_ETC_CONFIG_DIR + "common-account-access"]
++    if os.path.exists(PAM_ETC_CONFIG_DIR + "common-password-access"):
++        filename = [PAM_ETC_CONFIG_DIR + "common-password-access",
++                    PAM_ETC_CONFIG_DIR + "common-account-access"]
++    else:
++        filename = [PAM_ETC_CONFIG_DIR + "common-password",
++                    PAM_ETC_CONFIG_DIR + "common-account"]
+
+     # Count Max value is No. of files present in filename
+     count = 0
