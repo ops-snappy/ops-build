@@ -28,14 +28,14 @@ DEBDIR:=standalone/debian
 
 ifeq ($(CONFIGURED_PLATFORM),alphanetworks-snx-60a0-486f)
 
-BCM_PLATFORM:=snx60a0-486f
-BCM_VENDOR:=alpha-$(BCM_PLATFORM)
+BCM_PLATFORM:=snx-60a0-486f
+BCM_VENDOR:=alphanetworks-$(BCM_PLATFORM)
 KERNEL_VERSION:=3.18.32-amd64
 
 else ifeq ($(CONFIGURED_PLATFORM),alphanetworks-snh-60a0-320f)
 
-BCM_PLATFORM:=snh60a0-320f
-BCM_VENDOR:=alpha-$(BCM_PLATFORM)
+BCM_PLATFORM:=snh-60a0-320f
+BCM_VENDOR:=alphanetworks-$(BCM_PLATFORM)
 KERNEL_VERSION:=3.18.32-amd64
 
 else ifeq ($(CONFIGURED_PLATFORM),appliance)
@@ -99,6 +99,11 @@ libatomic \
 libospf  \
 libzebra \
 libpasswd_srv \
+libnetsnmpagent \
+libnetsnmptrapd \
+libnetsnmphelpers \
+libnetsnmpmibs \
+libnetsnmp \
 
 
 bin-daemons:=\
