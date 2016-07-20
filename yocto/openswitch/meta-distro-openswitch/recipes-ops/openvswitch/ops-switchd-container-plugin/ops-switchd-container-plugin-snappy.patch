@@ -1,128 +1,239 @@
+diff --git a/include/ofproto-sim-provider.h b/include/ofproto-sim-provider.h
+index 0731723..45dab08 100644
+--- a/include/ofproto-sim-provider.h
++++ b/include/ofproto-sim-provider.h
+@@ -28,6 +28,7 @@
+ #define ASIC_OVSDB_PATH         "/var/run/openvswitch-sim/ovsdb.db"
+ #define APPCTL                  "/opt/openvswitch/bin/ovs-appctl"
+ #define OVS_SIM                 "ovs-vswitchd-sim"
++#define OVSDB_PATH              "/run/openvswitch-sim/db.sock"
+
+ #define HOSTSFLOW_CFG_FILENAME  "/etc/hsflowd.conf"
+ #define HOSTSFLOW_NFLOG_GRP     5
 diff --git a/src/ofproto-sim-provider.c b/src/ofproto-sim-provider.c
-index b597d66..ca04b3a 100644
+index b597d66..b9f85f2 100644
 --- a/src/ofproto-sim-provider.c
 +++ b/src/ofproto-sim-provider.c
-@@ -197,16 +197,16 @@ construct(struct ofproto *ofproto_)
+@@ -196,17 +196,30 @@ construct(struct ofproto *ofproto_)
+      * name in ASIC OVS. In ASIC OVS creating a bridge also creates a bundle &
       * port with the same name. The port will be 'internal' type. */
      if (strcmp(ofproto_->type, "system") == 0) {
- 
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s --may-exist add-br %s -- set bridge %s datapath_type=netdev",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, getenv("OPENSWITCH_DATA_PATH"),
++                     OVSDB_PATH, ofproto->up.name, ofproto->up.name);
+
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s --may-exist add-br %s -- set bridge %s datapath_type=netdev",
 -                 OVS_VSCTL, ofproto->up.name, ofproto->up.name);
-+        snprintf(cmd_str, MAX_CMD_LEN, "%s%s --may-exist add-br %s -- set bridge %s datapath_type=netdev",
-+                 (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name, ofproto->up.name);
++        } else {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s --may-exist add-br %s -- set bridge %s datapath_type=netdev",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name, ofproto->up.name);
++        }
          if (system(cmd_str) != 0) {
              VLOG_ERR("Failed to add bridge in ASIC OVS. cmd=%s, rc=%s",
                       cmd_str, strerror(errno));
              error = 1;
          }
- 
+
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s set port %s trunks=0",
 -                 OVS_VSCTL, ofproto->up.name);
-+        snprintf(cmd_str, MAX_CMD_LEN, "%s%s set port %s trunks=0",
-+                 (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name);
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s set port %s trunks=0",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                     getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, ofproto->up.name);
++        } else {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s set port %s trunks=0",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name);
++        }
++
          if (system(cmd_str) != 0) {
              VLOG_ERR
                  ("Failed to set trunks in the bridge bundle. cmd=%s, rc=%s",
-@@ -270,7 +270,8 @@ destruct(struct ofproto *ofproto_ OVS_UNUSED)
- 
+@@ -270,7 +283,14 @@ destruct(struct ofproto *ofproto_ OVS_UNUSED)
+
      if (ofproto->vrf == false) {
- 
+
 -        snprintf(ovs_delbr, sizeof(ovs_delbr), "%s del-br %s", OVS_VSCTL, ofproto->up.name);
-+        snprintf(ovs_delbr, sizeof(ovs_delbr), "%s%s del-br %s",
-+                 (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name);
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            snprintf(ovs_delbr, sizeof(ovs_delbr), "%s%s --db=unix%s%s del-br %s",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                     getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, ofproto->up.name);
++        } else {
++            snprintf(ovs_delbr, sizeof(ovs_delbr), "%s%s del-br %s",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name);
++        }
          if (system(ovs_delbr) != 0) {
              VLOG_ERR("Failed to delete the bridge. cmd=%s, rc=%s",
                       ovs_delbr, strerror(errno));
-@@ -505,7 +506,8 @@ sim_bridge_vlan_routing_update(struct sim_provider_node *ofproto, int vlan,
+@@ -505,8 +525,15 @@ sim_bridge_vlan_routing_update(struct sim_provider_node *ofproto, int vlan,
          bitmap_set0(ofproto->vlan_intf_bmp, vlan);
      }
- 
+
 -    n = snprintf(cmd_str, MAX_CMD_LEN, "%s set port %s ", OVS_VSCTL,
-+    n = snprintf(cmd_str, MAX_CMD_LEN, "%s%s set port %s ",
-+                 (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
-                  ofproto->up.name);
- 
+-                 ofproto->up.name);
++    if (getenv("OPENSWITCH_DATA_PATH")) {
++        n = snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s set port %s ",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                     getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, ofproto->up.name);
++    } else {
++        n = snprintf(cmd_str, MAX_CMD_LEN, "%s%s set port %s ",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                     ofproto->up.name);
++    }
+
      for (i = 1; i < 4095; i++) {
-@@ -550,7 +552,9 @@ bundle_destroy(struct ofbundle *bundle)
+
+@@ -550,8 +577,19 @@ bundle_destroy(struct ofbundle *bundle)
      mbridge_unregister_bundle(ofproto->mbridge, bundle);
- 
+
      if (bundle->is_added_to_sim_ovs == true) {
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s del-port %s", OVS_VSCTL,
-+        snprintf(cmd_str, MAX_CMD_LEN, "%s%s del-port %s",
-+                 (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
-+                 OVS_VSCTL,
-                  bundle->name);
+-                 bundle->name);
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s del-port %s",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                     OVS_VSCTL,
++                     getenv("OPENSWITCH_DATA_PATH"),
++                     OVSDB_PATH,
++                     bundle->name);
++        } else {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s del-port %s",
++                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                     OVS_VSCTL,
++                     bundle->name);
++        }
          if (system(cmd_str) != 0) {
              VLOG_ERR("Failed to delete the existing port. cmd=%s, rc=%s",
-@@ -596,7 +600,8 @@ bundle_configure(struct ofbundle *bundle)
+                      cmd_str, strerror(errno));
+@@ -596,8 +634,15 @@ bundle_configure(struct ofbundle *bundle)
      /* If this bundle is already added in the ASIC simulator OVS then delete
       * it. We are going to re-create it with new config again. */
      if (bundle->is_added_to_sim_ovs == true) {
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s del-port %s", OVS_VSCTL,
-+        snprintf(cmd_str, MAX_CMD_LEN, "%s%s del-port %s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
-+                 OVS_VSCTL,
-                  bundle->name);
+-                 bundle->name);
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s del-port %s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                     OVS_VSCTL, getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH,
++                     bundle->name);
++        } else {
++            snprintf(cmd_str, MAX_CMD_LEN, "%s%s del-port %s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                     OVS_VSCTL,
++                     bundle->name);
++        }
          if (system(cmd_str) != 0) {
              VLOG_ERR("Failed to delete the existing port. cmd=%s, rc=%s",
-@@ -622,7 +627,8 @@ bundle_configure(struct ofbundle *bundle)
+                      cmd_str, strerror(errno));
+@@ -622,16 +667,29 @@ bundle_configure(struct ofbundle *bundle)
           * driver does not work properly */
          if (n_ports > 1) {
              LIST_FOR_EACH_SAFE(port, next_port, bundle_node, &bundle->ports) {
 -                snprintf(cmd_str, MAX_CMD_LEN, "%s del-port %s", OVS_VSCTL,
-+                snprintf(cmd_str, MAX_CMD_LEN, "%s%s del-port %s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
-+                         OVS_VSCTL,
-                          netdev_get_name(port->up.netdev));
+-                         netdev_get_name(port->up.netdev));
++                if (getenv("OPENSWITCH_DATA_PATH")) {
++                    snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s del-port %s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                             OVS_VSCTL,getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH,
++                             netdev_get_name(port->up.netdev));
++                } else {
++                    snprintf(cmd_str, MAX_CMD_LEN, "%s%s del-port %s", (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                             OVS_VSCTL,
++                             netdev_get_name(port->up.netdev));
++                }
                  if (system(cmd_str) != 0) {
                      VLOG_DBG("Failed to delete port. cmd=%s, rc=%s",
-@@ -630,8 +636,8 @@ bundle_configure(struct ofbundle *bundle)
+                              cmd_str, strerror(errno));
                  }
              }
          }
 -        n = snprintf(cmd_str, MAX_CMD_LEN, "%s --may-exist add-port %s %s",
 -                     OVS_VSCTL, ofproto->up.name, bundle->name);
-+        n = snprintf(cmd_str, MAX_CMD_LEN, "%s%s --may-exist add-port %s %s",
-+                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name, bundle->name);
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            n = snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s --may-exist add-port %s %s",
++                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, OVS_VSCTL,
++                         getenv("OPENSWITCH_DATA_PATH"), ofproto->up.name, bundle->name);
++        } else {
++            n = snprintf(cmd_str, MAX_CMD_LEN, "%s%s --may-exist add-port %s %s",
++                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name, bundle->name);
++        }
      } else {
          VLOG_INFO("Not enough ports to create a bundle, so skipping it.");
          return;
-@@ -1140,8 +1146,8 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+@@ -1139,9 +1197,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+         /* delete the mirror in openvswitch before creating new one */
          /************************************************************/
          if (mirrorModify == true) {
-             n = snprintf(cmd_str, MAX_CMD_LEN,
+-            n = snprintf(cmd_str, MAX_CMD_LEN,
 -                         "%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
 -                         OVS_VSCTL, mirror->name);
-+                         "%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
-+                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, mirror->name);
- 
++            if (getenv("OPENSWITCH_DATA_PATH")) {
++                n = snprintf(cmd_str, MAX_CMD_LEN,
++                             "%s%s --db=unix:%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
++                             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                             getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, mirror->name);
++            } else {
++                n = snprintf(cmd_str, MAX_CMD_LEN,
++                             "%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
++                             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, mirror->name);
++            }
+
              VLOG_DBG("%s:Constructed cmd:'%s'", __FUNCTION__, cmd_str);
- 
-@@ -1155,8 +1161,8 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+
+@@ -1154,9 +1219,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+         /************************************************************/
          /* Build the command to construct the mirror in openvswitch */
          /************************************************************/
-         n = snprintf(cmd_str, MAX_CMD_LEN,
+-        n = snprintf(cmd_str, MAX_CMD_LEN,
 -                     "%s -- --id=@m create mirror name=%s -- add bridge bridge_normal mirrors @m",
 -                     OVS_VSCTL, s->name);
-+                     "%s%s -- --id=@m create mirror name=%s -- add bridge bridge_normal mirrors @m",
-+                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, s->name);
- 
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            n = snprintf(cmd_str, MAX_CMD_LEN,
++                         "%s%s --db=unix:%s%s -- --id=@m create mirror name=%s -- add bridge bridge_normal mirrors @m",
++                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                         getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, s->name);
++        } else {
++            n = snprintf(cmd_str, MAX_CMD_LEN,
++                         "%s%s -- --id=@m create mirror name=%s -- add bridge bridge_normal mirrors @m",
++                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, s->name);
++        }
+
          /***********************************/
          /* Add the ingress ports           */
-@@ -1254,8 +1260,8 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+@@ -1253,9 +1325,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+         /************************************************************/
          /* Build the command to delete the mirror in openvswitch */
          /************************************************************/
-         n = snprintf(cmd_str, MAX_CMD_LEN,
+-        n = snprintf(cmd_str, MAX_CMD_LEN,
 -                     "%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
 -                     OVS_VSCTL, mirror->name);
-+                     "%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
-+                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, mirror->name);
- 
++        if (getenv("OPENSWITCH_DATA_PATH")) {
++            n = snprintf(cmd_str, MAX_CMD_LEN,
++                         "%s%s --db=unix:%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
++                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                         getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, mirror->name);
++        } else {
++            n = snprintf(cmd_str, MAX_CMD_LEN,
++                         "%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
++                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, mirror->name);
++        }
+
          VLOG_DBG("%s:Constructed cmd:'%s'", __FUNCTION__, cmd_str);
- 
-@@ -1739,11 +1745,11 @@ sflow_ovs_delete(struct sim_provider_node *ofproto)
- 
+
+@@ -1738,12 +1817,23 @@ sflow_ovs_delete(struct sim_provider_node *ofproto)
+     char cmd_str[MAX_CMD_LEN];
+
      /* remove the sflow config from bridge */
-     snprintf(cmd_str, MAX_CMD_LEN,
+-    snprintf(cmd_str, MAX_CMD_LEN,
 -                        "%s list bridge %s | grep sflow | "
++    if (getenv("OPENSWITCH_DATA_PATH")) {
++        snprintf(cmd_str, MAX_CMD_LEN,
++                        "%s%s --db=unix:%s%s list bridge %s | grep sflow | "
++                        "awk -F ': ' '{print $2}' "
++                        "| xargs %s%s --db=unix:%s%s remove bridge %s sflow",
++                        (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                        getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, ofproto->up.name,
++                        (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
++                        getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH, ofproto->up.name);
++    } else {
++        snprintf(cmd_str, MAX_CMD_LEN,
 +                        "%s%s list bridge %s | grep sflow | "
                          "awk -F ': ' '{print $2}' "
 -                        "| xargs %s remove bridge %s sflow",
@@ -131,17 +242,27 @@ index b597d66..ca04b3a 100644
 +                        "| xargs %s%s remove bridge %s sflow",
 +                        (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name,
 +                        (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, ofproto->up.name);
++    }
      if (system(cmd_str) != 0) {
          VLOG_ERR("Failed to remove sflow config from bridge %s. cmd='%s', rc=%s",
                    ofproto->up.name, cmd_str, strerror(errno));
-@@ -2031,8 +2037,8 @@ sflow_ovs_configure(struct sim_provider_node *ofproto,
+@@ -2030,9 +2120,16 @@ sflow_ovs_configure(struct sim_provider_node *ofproto,
+     char cmd_str[MAX_CMD_LEN];
      char *ip = NULL, *port = NULL;
- 
-     cmd_len += snprintf(cmd_str + cmd_len, MAX_CMD_LEN - cmd_len,
+
+-    cmd_len += snprintf(cmd_str + cmd_len, MAX_CMD_LEN - cmd_len,
 -                        "%s -- --id=@sflow create sflow ",
 -                        OVS_VSCTL);
-+                        "%s%s -- --id=@sflow create sflow ",
-+                        (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL);
++    if (getenv("OPENSWITCH_DATA_PATH")) {
++        cmd_len += snprintf(cmd_str + cmd_len, MAX_CMD_LEN - cmd_len,
++                            "%s%s --db=unix:%s%s -- --id=@sflow create sflow ",
++                            (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""),
++                            OVS_VSCTL,getenv("OPENSWITCH_DATA_PATH"), OVSDB_PATH);
++    } else {
++        cmd_len += snprintf(cmd_str + cmd_len, MAX_CMD_LEN - cmd_len,
++                            "%s%s -- --id=@sflow create sflow ",
++                            (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL);
++    }
      if (ofproto_cfg->agent_device) {
          cmd_len += snprintf(cmd_str + cmd_len, MAX_CMD_LEN - cmd_len,
                              "agent=%s ", ofproto_cfg->agent_device);
