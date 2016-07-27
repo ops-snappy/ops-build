@@ -1,9 +1,13 @@
 diff --git a/cfgdb.py b/cfgdb.py
-index 07b2c10..ff406fd 100644
+index 07b2c10..fc54119 100644
 --- a/cfgdb.py
 +++ b/cfgdb.py
-@@ -30,7 +30,7 @@ idl = None
- def_db = 'unix:/var/run/openvswitch/db.sock'
+@@ -27,10 +27,10 @@ vlog = ovs.vlog.Vlog("cfgdb")
+ # ovs definitions
+ idl = None
+ # OPS_TODO: Need to pull this from the build env
+-def_db = 'unix:/var/run/openvswitch/db.sock'
++def_db = "unix:%s/db.sock" % ovs.dirs.RUNDIR
  
  # OPS_TODO: Need to pull this from the build env
 -cfgdb_schema = '/usr/share/openvswitch/configdb.ovsschema'
@@ -11,11 +15,30 @@ index 07b2c10..ff406fd 100644
  
  #Configdb tabe names
  CONFIG_TABLE = "config"
+diff --git a/cfgdbutil.py b/cfgdbutil.py
+index d4664c7..6899b4f 100644
+--- a/cfgdbutil.py
++++ b/cfgdbutil.py
+@@ -35,7 +35,7 @@ import cfgdb
+ type_startup_config = "startup"
+ 
+ vlog = ovs.vlog.Vlog("cfgmgmt")
+-TEMPORARY_DB_SHOW_STARTUP = "unix:/var/run/openvswitch/temp_startup.sock"
++TEMPORARY_DB_SHOW_STARTUP = "unix:%s/temp_startup.sock" % ovs.dirs.RUNDIR
+ 
+ 
+ def show_config(args):
 diff --git a/ops_cfgd.py b/ops_cfgd.py
-index 64b0a79..36b9174 100644
+index 64b0a79..919fc4a 100644
 --- a/ops_cfgd.py
 +++ b/ops_cfgd.py
-@@ -44,8 +44,8 @@ def_db = 'unix:/var/run/openvswitch/db.sock'
+@@ -39,13 +39,13 @@ from opslib import restparser
+ # ovs definitions
+ idl = None
+ # OPS_TODO: Need to pull this from the build env
+-def_db = 'unix:/var/run/openvswitch/db.sock'
++def_db = "unix:%s/db.sock" % ovs.dirs.RUNDIR
+ 
  # Configuration file definitions
  saved_config = None
  # OPS_TODO: Need to pull these three from the build env

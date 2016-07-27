@@ -1,0 +1,44 @@
+diff --git a/diagtools/src/cli/ping_handler.c b/diagtools/src/cli/ping_handler.c
+index 43acca5..495fd4b 100644
+--- a/diagtools/src/cli/ping_handler.c
++++ b/diagtools/src/cli/ping_handler.c
+@@ -24,6 +24,7 @@
+ 
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include "ping.h"
+ #include "openvswitch/vlog.h"
+ 
+@@ -56,7 +57,8 @@ bool ping_main (pingEntry *p, void (*fPtr)(char *buff))
+     }
+ 
+     /* Append path and namespace name */
+-    len += snprintf(target+len, BUFSIZ, "%s ", EXE_PATH);
++    len += snprintf(target+len, BUFSIZ, "%s" EXE_PATH " ",
++                    (getenv("OPENSWITCH_INSTALL_PATH") ? : ""));
+     len += snprintf(target+len, BUFSIZ-len, "%s ", DEFAULT_VRF_NAME);
+ 
+     /* Append default cmd either ping4 or ping6 */
+diff --git a/diagtools/src/cli/traceroute_handler.c b/diagtools/src/cli/traceroute_handler.c
+index 0137209..6df7b63 100644
+--- a/diagtools/src/cli/traceroute_handler.c
++++ b/diagtools/src/cli/traceroute_handler.c
+@@ -23,6 +23,7 @@
+ 
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include "traceroute.h"
+ #include "vtysh/command.h"
+ #include "vtysh/vtysh.h"
+@@ -56,7 +57,8 @@ bool traceroute_handler(tracerouteEntry *p, void (*fPtr)(char *buff))
+     }
+ 
+     /* Append path and namespace name */
+-    len += snprintf(target+len, BUFSIZ, "%s ", EXE_PATH);
++    len += snprintf(target+len, BUFSIZ, "%s" EXE_PATH " ",
++                    (getenv("OPENSWITCH_INSTALL_PATH") ? : ""));
+     len += snprintf(target+len, BUFSIZ-len, "%s ", DEFAULT_VRF_NAME);
+ 
+     /* Append default cmd either traceroute4 or traceroute6 */

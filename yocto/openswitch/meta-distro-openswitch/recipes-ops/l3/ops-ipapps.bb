@@ -6,6 +6,7 @@ DEPENDS = "ops-utils ops-ovsdb ops-cli"
 
 SRC_URI = "git://git.openswitch.net/openswitch/ops-ipapps;protocol=http;branch=rel/dill \
            file://ops-udpfwd.service \
+           file://ops-ipapps-snappy.patch \
            "
 
 SRCREV = "30007694dffa942c9c2a33b185dfd5e446024562"
