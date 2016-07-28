@@ -1,5 +1,5 @@
 diff --git a/src/ops_subagent.c b/src/ops_subagent.c
-index 519be70..6c11939 100644
+index 519be70..badd433 100644
 --- a/src/ops_subagent.c
 +++ b/src/ops_subagent.c
 @@ -161,7 +161,10 @@ main (int argc, char **argv) {
@@ -9,7 +9,7 @@ index 519be70..6c11939 100644
 -  plugins_snmp_init(FEATURE_SNMP_PATH);
 +  char plugins_path[256];
 +  snprintf(plugins_path, sizeof(plugins_path), "%s" FEATURE_SNMP_PATH,
-+           getenv("OPENSWITCH_INSTALL_PATH"));
++           getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : "");
 +  plugins_snmp_init(plugins_path);
  
    /* create a thread to poll OVSDB */
