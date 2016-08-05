@@ -9,7 +9,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-cfgd;protocol=http;branch=rel
            file://cfgd.service \
 "
 
-SRCREV = "60bc8af6cfe374c286c00f0c9b84473b5371fd64"
+SRCREV = "82a8538deed3ce3cf4d82db75af337fe3c488447"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.

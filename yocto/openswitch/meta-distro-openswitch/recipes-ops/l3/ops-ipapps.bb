@@ -9,7 +9,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-ipapps;protocol=http;branch=r
            file://ops-ipapps-snappy.patch \
            "
 
-SRCREV = "30007694dffa942c9c2a33b185dfd5e446024562"
+SRCREV = "d9be4e1c139452e5b1e877b8b44bc878c61282f7"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.

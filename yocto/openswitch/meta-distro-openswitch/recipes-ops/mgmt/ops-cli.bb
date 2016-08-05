@@ -9,7 +9,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-cli;protocol=http;branch=rel/
            file://ops-cli-snappy.patch \
 "
 
-SRCREV = "b87bc90f5784014a218eb2c0d96aa8bbfcecb22e"
+SRCREV = "8a714e6c55f20a7d0880e2413f85aab4cc7bfd09"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.

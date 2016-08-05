@@ -10,7 +10,7 @@ SRC_URI = "git://git.openswitch.net/openswitch/ops-sysd;protocol=https;branch=re
            file://ops-sysd.service \
 "
 
-SRCREV = "ef08648387c6521352283108cf8bb6969e02462d"
+SRCREV = "7e4cc9cadc9e574e3dca7a954039fcf4e45459a3"
 
 # When using AUTOREV, we need to force the package version to the revision of git
 # in order to avoid stale shared states.
@@ -21,9 +21,14 @@ S = "${WORKDIR}/git"
 do_install_append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ops-sysd.service ${D}${systemd_unitdir}/system
+    # Code to copy System custom validators to /usr/share/opsplugins.
+    install -d ${D}/usr/share/opsplugins
+    for plugin in $(find ${S}/opsplugins -name "*.py"); do \
+        install -m 0644 ${plugin} ${D}/usr/share/opsplugins
+    done
 }
 
-FILES_${PN} += "/usr/lib/cli/plugins/"
+FILES_${PN} += "/usr/lib/cli/plugins/ /usr/share/opsplugins"
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE_${PN} = "ops-sysd.service"
 
