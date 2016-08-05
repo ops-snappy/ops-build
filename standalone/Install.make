@@ -66,6 +66,7 @@ relocated-libs:=\
 libaudit \
 
 relocate-bins:=\
+openssl \
 snmpwalk \
 snmpbulkget \
 snmpget \
@@ -74,7 +75,6 @@ snmpgetnext \
 snmpstatus \
 
 snappy-local-bins:=\
-openssl \
 gdb \
 gdbserver \
 
