@@ -7,14 +7,37 @@ index 0731723..45dab08 100644
  #define APPCTL                  "/opt/openvswitch/bin/ovs-appctl"
  #define OVS_SIM                 "ovs-vswitchd-sim"
 +#define OVSDB_PATH              "/run/openvswitch-sim/db.sock"
-
+ 
  #define HOSTSFLOW_CFG_FILENAME  "/etc/hsflowd.conf"
  #define HOSTSFLOW_NFLOG_GRP     5
+diff --git a/src/netdev-sim.c b/src/netdev-sim.c
+index 9aa23da..bba1baa 100644
+--- a/src/netdev-sim.c
++++ b/src/netdev-sim.c
+@@ -214,12 +214,18 @@ netdev_sim_set_macaddr(char *intf, char *macaddr)
+         return -1;
+     }
+ 
++#define EXTREME_BUG_ECS93_WORKAROUND
++#ifdef EXTREME_BUG_ECS93_WORKAROUND
++    VLOG_ERR("netdev_set_macaddr (%s) MAC (%s) ioctl bypassed - bug #ecs93\n",
++             intf, macaddr);
++#else
+     if (ioctl(sock, SIOCSIFHWADDR, &ifr) < 0) {
+         VLOG_ERR("netdev_set_macaddr (%s) MAC (%s) ioctl failed '%s'\n",
+                   intf, macaddr, strerror(errno));
+         close(sock);
+         return -1;
+     }
++#endif
+ 
+     close(sock);
+     return 0;
 diff --git a/src/ofproto-sim-provider.c b/src/ofproto-sim-provider.c
-index b597d66..b9f85f2 100644
+index 86cf963..bd415c0 100644
 --- a/src/ofproto-sim-provider.c
 +++ b/src/ofproto-sim-provider.c
-@@ -196,17 +196,30 @@ construct(struct ofproto *ofproto_)
+@@ -191,17 +191,30 @@ construct(struct ofproto *ofproto_)
       * name in ASIC OVS. In ASIC OVS creating a bridge also creates a bundle &
       * port with the same name. The port will be 'internal' type. */
      if (strcmp(ofproto_->type, "system") == 0) {
@@ -22,7 +45,7 @@ index b597d66..b9f85f2 100644
 +            snprintf(cmd_str, MAX_CMD_LEN, "%s%s --db=unix:%s%s --may-exist add-br %s -- set bridge %s datapath_type=netdev",
 +                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, getenv("OPENSWITCH_DATA_PATH"),
 +                     OVSDB_PATH, ofproto->up.name, ofproto->up.name);
-
+ 
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s --may-exist add-br %s -- set bridge %s datapath_type=netdev",
 -                 OVS_VSCTL, ofproto->up.name, ofproto->up.name);
 +        } else {
@@ -34,7 +57,7 @@ index b597d66..b9f85f2 100644
                       cmd_str, strerror(errno));
              error = 1;
          }
-
+ 
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s set port %s trunks=0",
 -                 OVS_VSCTL, ofproto->up.name);
 +        if (getenv("OPENSWITCH_DATA_PATH")) {
@@ -49,10 +72,10 @@ index b597d66..b9f85f2 100644
          if (system(cmd_str) != 0) {
              VLOG_ERR
                  ("Failed to set trunks in the bridge bundle. cmd=%s, rc=%s",
-@@ -270,7 +283,14 @@ destruct(struct ofproto *ofproto_ OVS_UNUSED)
-
+@@ -265,7 +278,14 @@ destruct(struct ofproto *ofproto_ OVS_UNUSED)
+ 
      if (ofproto->vrf == false) {
-
+ 
 -        snprintf(ovs_delbr, sizeof(ovs_delbr), "%s del-br %s", OVS_VSCTL, ofproto->up.name);
 +        if (getenv("OPENSWITCH_DATA_PATH")) {
 +            snprintf(ovs_delbr, sizeof(ovs_delbr), "%s%s --db=unix%s%s del-br %s",
@@ -65,10 +88,10 @@ index b597d66..b9f85f2 100644
          if (system(ovs_delbr) != 0) {
              VLOG_ERR("Failed to delete the bridge. cmd=%s, rc=%s",
                       ovs_delbr, strerror(errno));
-@@ -505,8 +525,15 @@ sim_bridge_vlan_routing_update(struct sim_provider_node *ofproto, int vlan,
+@@ -500,8 +520,15 @@ sim_bridge_vlan_routing_update(struct sim_provider_node *ofproto, int vlan,
          bitmap_set0(ofproto->vlan_intf_bmp, vlan);
      }
-
+ 
 -    n = snprintf(cmd_str, MAX_CMD_LEN, "%s set port %s ", OVS_VSCTL,
 -                 ofproto->up.name);
 +    if (getenv("OPENSWITCH_DATA_PATH")) {
@@ -80,12 +103,12 @@ index b597d66..b9f85f2 100644
 +                     (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL,
 +                     ofproto->up.name);
 +    }
-
+ 
      for (i = 1; i < 4095; i++) {
-
-@@ -550,8 +577,19 @@ bundle_destroy(struct ofbundle *bundle)
+ 
+@@ -545,8 +572,19 @@ bundle_destroy(struct ofbundle *bundle)
      mbridge_unregister_bundle(ofproto->mbridge, bundle);
-
+ 
      if (bundle->is_added_to_sim_ovs == true) {
 -        snprintf(cmd_str, MAX_CMD_LEN, "%s del-port %s", OVS_VSCTL,
 -                 bundle->name);
@@ -105,7 +128,7 @@ index b597d66..b9f85f2 100644
          if (system(cmd_str) != 0) {
              VLOG_ERR("Failed to delete the existing port. cmd=%s, rc=%s",
                       cmd_str, strerror(errno));
-@@ -596,8 +634,15 @@ bundle_configure(struct ofbundle *bundle)
+@@ -591,8 +629,15 @@ bundle_configure(struct ofbundle *bundle)
      /* If this bundle is already added in the ASIC simulator OVS then delete
       * it. We are going to re-create it with new config again. */
      if (bundle->is_added_to_sim_ovs == true) {
@@ -123,7 +146,7 @@ index b597d66..b9f85f2 100644
          if (system(cmd_str) != 0) {
              VLOG_ERR("Failed to delete the existing port. cmd=%s, rc=%s",
                       cmd_str, strerror(errno));
-@@ -622,16 +667,29 @@ bundle_configure(struct ofbundle *bundle)
+@@ -617,16 +662,29 @@ bundle_configure(struct ofbundle *bundle)
           * driver does not work properly */
          if (n_ports > 1) {
              LIST_FOR_EACH_SAFE(port, next_port, bundle_node, &bundle->ports) {
@@ -157,7 +180,7 @@ index b597d66..b9f85f2 100644
      } else {
          VLOG_INFO("Not enough ports to create a bundle, so skipping it.");
          return;
-@@ -1139,9 +1197,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+@@ -1134,9 +1192,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
          /* delete the mirror in openvswitch before creating new one */
          /************************************************************/
          if (mirrorModify == true) {
@@ -174,10 +197,10 @@ index b597d66..b9f85f2 100644
 +                             "%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
 +                             (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, mirror->name);
 +            }
-
+ 
              VLOG_DBG("%s:Constructed cmd:'%s'", __FUNCTION__, cmd_str);
-
-@@ -1154,9 +1219,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+ 
+@@ -1149,9 +1214,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
          /************************************************************/
          /* Build the command to construct the mirror in openvswitch */
          /************************************************************/
@@ -194,10 +217,10 @@ index b597d66..b9f85f2 100644
 +                         "%s%s -- --id=@m create mirror name=%s -- add bridge bridge_normal mirrors @m",
 +                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, s->name);
 +        }
-
+ 
          /***********************************/
          /* Add the ingress ports           */
-@@ -1253,9 +1325,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
+@@ -1248,9 +1320,16 @@ mirror_set(struct ofproto *ofproto_, void *aux,
          /************************************************************/
          /* Build the command to delete the mirror in openvswitch */
          /************************************************************/
@@ -214,12 +237,12 @@ index b597d66..b9f85f2 100644
 +                         "%s%s -- --id=@m get mirror %s -- remove bridge bridge_normal mirrors @m",
 +                         (getenv("OPENSWITCH_INSTALL_PATH") ? getenv("OPENSWITCH_INSTALL_PATH") : ""), OVS_VSCTL, mirror->name);
 +        }
-
+ 
          VLOG_DBG("%s:Constructed cmd:'%s'", __FUNCTION__, cmd_str);
-
-@@ -1738,12 +1817,23 @@ sflow_ovs_delete(struct sim_provider_node *ofproto)
+ 
+@@ -1733,12 +1812,23 @@ sflow_ovs_delete(struct sim_provider_node *ofproto)
      char cmd_str[MAX_CMD_LEN];
-
+ 
      /* remove the sflow config from bridge */
 -    snprintf(cmd_str, MAX_CMD_LEN,
 -                        "%s list bridge %s | grep sflow | "
@@ -246,10 +269,10 @@ index b597d66..b9f85f2 100644
      if (system(cmd_str) != 0) {
          VLOG_ERR("Failed to remove sflow config from bridge %s. cmd='%s', rc=%s",
                    ofproto->up.name, cmd_str, strerror(errno));
-@@ -2030,9 +2120,16 @@ sflow_ovs_configure(struct sim_provider_node *ofproto,
+@@ -2025,9 +2115,16 @@ sflow_ovs_configure(struct sim_provider_node *ofproto,
      char cmd_str[MAX_CMD_LEN];
      char *ip = NULL, *port = NULL;
-
+ 
 -    cmd_len += snprintf(cmd_str + cmd_len, MAX_CMD_LEN - cmd_len,
 -                        "%s -- --id=@sflow create sflow ",
 -                        OVS_VSCTL);

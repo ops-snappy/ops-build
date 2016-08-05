@@ -32,7 +32,7 @@ index 9687426..ba7a29d 100755
 -settings["passwd_srv_yaml"] = '/etc/ops-passwd-srv/ops-passwd-srv.yaml'
 +settings["passwd_srv_yaml"] = "%s/etc/ops-passwd-srv/ops-passwd-srv.yaml" % os.environ.get("OPENSWITCH_INSTALL_PATH", "")
 diff --git a/opsrest/urls.py b/opsrest/urls.py
-index 5cbab5f..e9554d4 100755
+index 5cbab5f..83c23db 100755
 --- a/opsrest/urls.py
 +++ b/opsrest/urls.py
 @@ -21,6 +21,7 @@ from opsrest.handlers.websocket.notifications import WSNotificationsHandler
@@ -48,10 +48,10 @@ index 5cbab5f..e9554d4 100755
  static_url_patterns =\
      [(r"/api/(.*)", StaticContentHandler,
 -     {"path": "/srv/www/api", "default_filename": "index.html"}),
-+     {"path": "%s/srv/www/api" % os.environ.get("OPENSWITCH_INSTALL_PATH"), "default_filename": "index.html"}),
++     {"path": "%s/srv/www/api" % os.environ.get("OPENSWITCH_INSTALL_PATH", ""), "default_filename": "index.html"}),
       (r"/(.*)", StaticContentHandler,
 -     {"path": "/srv/www/static", "default_filename": "index.html"})]
-+      {"path": "%s/srv/www/static" % os.environ.get("OPENSWITCH_INSTALL_PATH"), "default_filename": "index.html"})]
++      {"path": "%s/srv/www/static" % os.environ.get("OPENSWITCH_INSTALL_PATH", ""), "default_filename": "index.html"})]
 diff --git a/restd.py b/restd.py
 index 961a79d..28e4522 100644
 --- a/restd.py

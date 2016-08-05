@@ -16,10 +16,10 @@ index 07b2c10..fc54119 100644
  #Configdb tabe names
  CONFIG_TABLE = "config"
 diff --git a/cfgdbutil.py b/cfgdbutil.py
-index d4664c7..6899b4f 100644
+index 4d5a2c2..ea93b30 100644
 --- a/cfgdbutil.py
 +++ b/cfgdbutil.py
-@@ -35,7 +35,7 @@ import cfgdb
+@@ -36,7 +36,7 @@ import cfgdb
  type_startup_config = "startup"
  
  vlog = ovs.vlog.Vlog("cfgmgmt")

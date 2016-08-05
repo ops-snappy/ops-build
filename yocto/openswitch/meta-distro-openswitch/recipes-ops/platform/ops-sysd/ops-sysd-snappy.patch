@@ -1,5 +1,31 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3f3e8c5..88fe058 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -75,14 +82,9 @@ target_link_libraries (${SYSD} ${OPSUTILS_LIBRARIES} ${CONFIG_YAML_LIBRARIES}
+                        ${OVSCOMMON_LIBRARIES} ${OVSDB_LIBRARIES} ${ZLIB_LIBRARIES}
+                        -lpthread -lrt -lsupportability -lyaml)
+ 
+-# The default install prefix is /usr. We want to install manifest file at
+-# '/etc/openswitch'. So change the install prefix to '/', and use relative
+-# directories in the install command.
+-SET(CMAKE_INSTALL_PREFIX "/" CACHE STRING "Prefix prepended to install directories" FORCE)
+-
+ # Rules to install ops-sysd binary in rootfs
+ install(TARGETS ${SYSD}
+-        RUNTIME DESTINATION usr/bin)
++        RUNTIME DESTINATION /usr/bin)
+ 
+ # Build ops-sysd cli shared libraries.
+ add_subdirectory(src/cli)
+@@ -90,4 +92,4 @@ add_subdirectory(src/cli)
+ # OPS_TODO: The image.manifest file should not be located in sysd.
+ # This is just temporary parking space until we find it better home.
+ install(FILES files/image.manifest
+-        DESTINATION etc/openswitch)
++        DESTINATION /etc/openswitch)
 diff --git a/src/sysd.c b/src/sysd.c
-index 112b12a..e9f9f2b 100644
+index e7ac123..83c4d36 100644
 --- a/src/sysd.c
 +++ b/src/sysd.c
 @@ -62,6 +62,7 @@ int              num_subsystems = 0;
@@ -10,8 +36,106 @@ index 112b12a..e9f9f2b 100644
  
  daemon_info_t **daemons = NULL;
  int num_daemons = 0;
+diff --git a/src/sysd_fru.c b/src/sysd_fru.c
+index 39c75bc..850117d 100644
+--- a/src/sysd_fru.c
++++ b/src/sysd_fru.c
+@@ -39,6 +39,14 @@
+ 
+ #include "eventlog.h"
+ 
++/*
++ * Used to populate FRU fields not supplied by the 
++ * manufacturer.
++ */
++#define SYSD_UNKNOWN "Unknown"
++#define SYSD_UNKNOWN_1 "?"
++#define SYSD_UNKNOWN_2 SYSD_UNKNOWN_1 SYSD_UNKNOWN_1
++
+ VLOG_DEFINE_THIS_MODULE(fru);
+ 
+ /** @ingroup sysd
+@@ -186,6 +194,78 @@ sysd_process_eeprom(unsigned char *buf, fru_eeprom_t *fru_eeprom, int len)
+         buf += skip;
+     }
+ 
++    /*
++     * Required fields that MUST be found EEPROM.
++     */
++    if ((fru_eeprom->num_macs == 0) ||
++        ((fru_eeprom->base_mac_address[0] == 0) &&
++         (fru_eeprom->base_mac_address[1] == 0) &&
++         (fru_eeprom->base_mac_address[2] == 0) &&
++         (fru_eeprom->base_mac_address[3] == 0) &&
++         (fru_eeprom->base_mac_address[4] == 0) &&
++         (fru_eeprom->base_mac_address[5] == 0)))
++    {
++        VLOG_ERR("MAC Address info not found in FRU EEPROM.");
++        return (false);
++    }
++
++    /* Fill in missing fields with some reasonable values if needed. */
++    if (!strlen(fru_eeprom->country_code)) {
++        strcpy(fru_eeprom->country_code, SYSD_UNKNOWN_2);
++        VLOG_WARN("Country code not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN_2);
++    }
++    if (!fru_eeprom->diag_version) {
++        fru_eeprom->diag_version = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Diag version not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->label_revision) {
++        fru_eeprom->label_revision = strdup(SYSD_UNKNOWN_1);
++        VLOG_WARN("Label version not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN_1);
++    }
++    if (!strlen(fru_eeprom->manufacture_date)) {
++        strcpy(fru_eeprom->manufacture_date, SYSD_UNKNOWN);
++        VLOG_WARN("Manufacture date not found in FRU EEPROM. Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->manufacturer) {
++        fru_eeprom->manufacturer = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Manufacturer not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->onie_version) {
++        fru_eeprom->onie_version = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("ONIE version not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->part_number) {
++        fru_eeprom->part_number = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Part Number not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->platform_name) {
++        fru_eeprom->platform_name = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Platform Name not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->product_name) {
++        fru_eeprom->product_name = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Product Name not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->serial_number) {
++        fru_eeprom->serial_number = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Serial Number not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++    if (!fru_eeprom->vendor) {
++        fru_eeprom->vendor = strdup(SYSD_UNKNOWN);
++        VLOG_WARN("Vendor not found in FRU EEPROM.  Using \"%s\".",
++                  SYSD_UNKNOWN);
++    }
++
+     return (true);
+ } /* sysd_process_eeprom() */
+ 
 diff --git a/src/sysd_ovsdb_if.c b/src/sysd_ovsdb_if.c
-index b2e85ac..26e729b 100644
+index 0b56198..9ed0be2 100644
 --- a/src/sysd_ovsdb_if.c
 +++ b/src/sysd_ovsdb_if.c
 @@ -58,6 +58,7 @@ VLOG_DEFINE_THIS_MODULE(ovsdb_if);
@@ -61,7 +185,7 @@ index b2e85ac..26e729b 100644
      if (NULL == os_ver_fp) {
          VLOG_ERR("Unable to find system OS release. File %s was not found",
                   OS_RELEASE_FILE_PATH);
-@@ -984,6 +994,6 @@ void
+@@ -1030,6 +1040,6 @@ void
  sysd_wait(void)
  {
      ovsdb_idl_wait(idl);

@@ -15,10 +15,10 @@ index ae830e5..896747e 100644
      if (lt_dlerror())
      {
 diff --git a/vtysh/vtysh.c b/vtysh/vtysh.c
-index 87b06f5..091136a 100755
+index 6f113be..b75f5f1 100755
 --- a/vtysh/vtysh.c
 +++ b/vtysh/vtysh.c
-@@ -152,6 +152,8 @@ bool rbac_check_user_permission(char * username, char * permission)
+@@ -155,6 +155,8 @@ bool rbac_check_user_permission(char * username, char * permission)
      lt_dlhandle dhhandle = 0;
      bool retval = 0;
      bool (*fun_ptr)(const char *, const char *) = NULL;
@@ -27,7 +27,7 @@ index 87b06f5..091136a 100755
      if ((username == NULL) || (permission == NULL))
      {
         return false;
-@@ -159,7 +161,10 @@ bool rbac_check_user_permission(char * username, char * permission)
+@@ -162,7 +164,10 @@ bool rbac_check_user_permission(char * username, char * permission)
      lt_dlinit();
      lt_dlerror();
  
@@ -39,7 +39,7 @@ index 87b06f5..091136a 100755
  
      if (lt_dlerror())
      {
-@@ -2324,27 +2329,52 @@ execute_command (const char *command, int argc, const char *arg[])
+@@ -2328,27 +2333,52 @@ execute_command (const char *command, int argc, const char *arg[])
     return ret;
  }
  
@@ -97,7 +97,7 @@ index 87b06f5..091136a 100755
              file_not_present = 1;
          }
      }
-@@ -2362,9 +2392,9 @@ remove_temp_db(int initialize)
+@@ -2366,9 +2396,9 @@ remove_temp_db(int initialize)
          fclose(fp);
      }
  
@@ -109,7 +109,7 @@ index 87b06f5..091136a 100755
      }
      else
      {
-@@ -2385,11 +2415,19 @@ DEFUN (show_startup_config,
+@@ -2389,11 +2419,19 @@ DEFUN (show_startup_config,
  {
    char *arguments[] = {"show", "startup-config", "cli"};
    char *temp_args[] = {"-D", TEMPORARY_STARTUP_SOCKET, "-c", "show running-config "};
@@ -133,7 +133,7 @@ index 87b06f5..091136a 100755
    remove_temp_db(1);
  
 diff --git a/vtysh/vtysh.h b/vtysh/vtysh.h
-index 5a4a288..b281c7b 100644
+index 498b37b..95f51fc 100644
 --- a/vtysh/vtysh.h
 +++ b/vtysh/vtysh.h
 @@ -48,6 +48,7 @@
@@ -145,10 +145,10 @@ index 5a4a288..b281c7b 100644
  struct vtysh_alias_data {
     char alias_def_str[VTYSH_MAX_ALIAS_DEF_LEN];
 diff --git a/vtysh/vtysh_main.c b/vtysh/vtysh_main.c
-index 90a6981..c1c2eac 100644
+index 6942b44..001d090 100644
 --- a/vtysh/vtysh_main.c
 +++ b/vtysh/vtysh_main.c
-@@ -291,6 +291,7 @@ main (int argc, char **argv, char **env)
+@@ -298,6 +298,7 @@ main (int argc, char **argv, char **env)
    char *temp_db = NULL;
    pthread_t vtysh_ovsdb_if_thread;
    struct passwd *pw = NULL;
@@ -156,7 +156,7 @@ index 90a6981..c1c2eac 100644
  
    /* set CONSOLE as OFF and SYSLOG as DBG for ops-cli VLOG moduler list.*/
    vlog_set_verbosity("CONSOLE:OFF");
-@@ -395,7 +396,10 @@ main (int argc, char **argv, char **env)
+@@ -402,7 +403,10 @@ main (int argc, char **argv, char **env)
    vty->type = VTY_SHELL;
    vty->node = VIEW_NODE;
    cmd_init(0);
@@ -169,7 +169,7 @@ index 90a6981..c1c2eac 100644
                         (pthread_attr_t *)NULL,
                         vtysh_ovsdb_main_thread,
 diff --git a/vtysh/vtysh_ovsdb_if.c b/vtysh/vtysh_ovsdb_if.c
-index ff68a5c..b402597 100644
+index c2da705..888b844 100644
 --- a/vtysh/vtysh_ovsdb_if.c
 +++ b/vtysh/vtysh_ovsdb_if.c
 @@ -228,6 +228,7 @@ ospf_ovsdb_init()

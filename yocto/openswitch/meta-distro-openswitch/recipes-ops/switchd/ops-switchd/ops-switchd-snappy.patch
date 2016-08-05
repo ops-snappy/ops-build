@@ -1,5 +1,5 @@
 diff --git a/plugins/plugins_yaml.c b/plugins/plugins_yaml.c
-index 4b0218c..5b43d38 100644
+index 98f794a..a63bd92 100644
 --- a/plugins/plugins_yaml.c
 +++ b/plugins/plugins_yaml.c
 @@ -59,7 +59,7 @@ dmidecode_exists(char *cmd_path)
